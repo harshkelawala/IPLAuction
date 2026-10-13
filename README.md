@@ -13,9 +13,26 @@ Design doc and execution plan: see the "IPL Auction Game — Design Doc & Execut
 - [x] 2026 squads for all 10 teams (272 players) with roles, nationality, capped status and contract prices
 - [x] `@ipl/data`: provisional ratings, fair value, base prices, auction sets, seed generator
 - [x] Cricsheet stats pipeline for stats-based ratings (written and tested on synthetic data; needs a run with internet access)
-- [ ] Headless 10-AI simulation to check auction prices look realistic
+- [x] Headless 10-AI simulation to check auction prices look realistic
 
-Next: Phase 1 — the solo game (1 human vs 9 AI).
+**Phase 1 — solo game** (in progress)
+
+- [x] `@ipl/engine`: auction state machine (sets, lots, timers, bids, sold/unsold, accelerated round)
+- [x] AI bidder v1 (value × need × budget × personality × noise, interest, marquee limits)
+- [ ] Game server with real timers
+- [ ] Pages: landing, team picker, live auction screen, results
+
+### Simulation check (20 mega auctions, all 10 teams AI, 272 players)
+
+| | Sim (average) | Real 2026 contracts |
+| --- | --- | --- |
+| Top price | ₹26.6 cr | ₹27 cr |
+| Average of top 10 | ₹23.6 cr | ₹21.6 cr |
+| Median price | ₹2.7 cr | ₹2 cr |
+| Lower quartile | ₹53 L | ₹40 L |
+| Sold at ₹30 L | 13% | 24% |
+
+Every run: all teams finish with 18–25 players, at most 8 overseas, and a purse of ₹0 or more. About 230 players sell and 88% of the purse is spent. Run it yourself with `npm run simulate`.
 
 ## Layout
 
@@ -30,6 +47,11 @@ packages/
     src/                 valuation curve, player builder, set builder, seed script
     generated/           players-2026.json, sets-2026-mega.json (from `npm run seed`)
     scripts/ratings/     compute_ratings.py (Cricsheet → stats-based ratings)
+  engine/
+    src/auction.ts       authoritative auction state machine (clock passed in)
+    src/ai.ts            AI bidder: max price, interest, bid timing, personalities
+    src/simulate.ts      run a full auction with 10 AI teams on a virtual clock
+    scripts/simulate.ts  price report across many seeds
 ```
 
 ## Commands
