@@ -19,7 +19,7 @@ export const UNCAPPED_SET_SIZE = 10;
 export type PoolPreset = 'quick' | 'standard' | 'full';
 
 export const POOL_SIZES: Record<PoolPreset, number> = {
-  quick: 120,
+  quick: 150,
   standard: 250,
   full: Number.POSITIVE_INFINITY,
 };

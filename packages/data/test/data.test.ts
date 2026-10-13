@@ -154,7 +154,7 @@ describe('sets', () => {
   });
 
   it('trims pools by value', () => {
-    expect(selectPool(players, 'quick')).toHaveLength(120);
+    expect(selectPool(players, 'quick')).toHaveLength(150);
     expect(selectPool(players, 'full')).toHaveLength(272);
   });
 });

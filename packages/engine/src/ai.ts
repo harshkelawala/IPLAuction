@@ -11,9 +11,21 @@ import type { Difficulty, Personality } from './types.js';
  * An AI keeps bidding while the next bid is at or below its max price.
  */
 
-/** How many of each role an AI aims for (22 of the 25 slots). */
+/** How many of each role an AI aims for in a 25-player squad (22 of the 25 slots). */
 export const SQUAD_TARGET: Record<Role, number> = { BAT: 6, WK: 2, AR: 6, BOWL: 8 };
-const TARGET_TOTAL = Object.values(SQUAD_TARGET).reduce((a, b) => a + b, 0);
+
+/** Role targets scaled to the squad size in play (e.g. 14-player squads in a Quick auction). */
+export function squadTargets(maxSquad: number): Record<Role, number> {
+  const k = maxSquad / 25;
+  return {
+    BAT: Math.max(1, Math.round(SQUAD_TARGET.BAT * k)),
+    WK: Math.max(1, Math.round(SQUAD_TARGET.WK * k)),
+    AR: Math.max(1, Math.round(SQUAD_TARGET.AR * k)),
+    BOWL: Math.max(2, Math.round(SQUAD_TARGET.BOWL * k)),
+  };
+}
+
+const total = (t: Record<Role, number>) => t.BAT + t.WK + t.AR + t.BOWL;
 
 export interface AiOptions {
   difficulty: Difficulty;
@@ -36,9 +48,13 @@ export function noise(seed: number, teamId: string, playerId: string): number {
   return ((h >>> 0) / 4294967295) * 2 - 1;
 }
 
-export function needMultiplier(counts: Record<Role, number>, role: Role): number {
+export function needMultiplier(
+  counts: Record<Role, number>,
+  role: Role,
+  targets: Record<Role, number> = SQUAD_TARGET,
+): number {
   const have = counts[role];
-  const want = SQUAD_TARGET[role];
+  const want = targets[role];
   if (have === 0 && role === 'WK') return 1.4;
   if (have < want) return 1 + 0.25 * ((want - have) / want);
   if (have < want + 2) return 0.6;
@@ -77,11 +93,15 @@ export function aiMaxPrice(auction: Auction, teamId: TeamId, playerId: string, o
   if (squadCount >= settings.maxSquad) return 0;
   if (player.isOverseas && team.overseasCount >= settings.maxOverseas) return 0;
 
-  const affordable = maxAffordableBid(auction.teamState(teamId), settings);
+  const affordable = Math.min(
+    maxAffordableBid(auction.teamState(teamId), settings),
+    team.purse - realisticReserve(auction, teamId, playerId),
+  );
   if (affordable < player.basePrice) return 0;
 
   // 1. Need: chase empty roles, back off from full ones.
-  let need = needMultiplier(roleCounts(auction, teamId), player.role);
+  const targets = squadTargets(settings.maxSquad);
+  let need = needMultiplier(roleCounts(auction, teamId), player.role, targets);
   if (opts.difficulty === 'easy') need = 1 + (need - 1) * 0.5;
 
   // 3. Personality and noise (computed first: they also stretch the budget cap).
@@ -92,12 +112,14 @@ export function aiMaxPrice(auction: Auction, teamId: TeamId, playerId: string, o
   // 2. Budget: no single buy may eat much more than its share of what's left.
   //    Stars may take up to 4 average slots' worth, but only for a team's first
   //    few marquee buys; after that every player must fit the depth budget.
-  const slotsLeft = Math.max(1, TARGET_TOTAL - squadCount);
+  const slotsLeft = Math.max(1, total(targets) - squadCount);
   const perSlot = team.purse / slotsLeft;
   const bigBuys = team.squad.filter((s) => s.price >= MARQUEE_PRICE).length;
-  const starCeiling = bigBuys >= MAX_MARQUEE_BUYS ? 1.5 : 4;
+  const marqueeBuys = Math.max(1, Math.round((MAX_MARQUEE_BUYS * settings.maxSquad) / 25));
+  const starCeiling = bigBuys >= marqueeBuys ? 1.5 : 4;
   const starFactor = Math.min(starCeiling, Math.max(1, 1 + (3.5 * (player.rating - 60)) / 35));
-  const budgetCap = perSlot * starFactor * style * jitter;
+  // Nobody spends more than 22% of a starting purse on one player (₹27.5 cr of ₹125 cr).
+  const budgetCap = Math.min(perSlot * starFactor * style * jitter, settings.purse * MAX_SHARE_OF_PURSE);
 
   let max = Math.min(player.fairValue * need * style * jitter, budgetCap);
 
@@ -115,9 +137,40 @@ export function aiMaxPrice(auction: Auction, teamId: TeamId, playerId: string, o
   return Math.floor(Math.min(max, affordable));
 }
 
+/**
+ * Money to keep back for the rest of the minimum squad, priced at the base prices of the
+ * cheapest players this team could still sign (Indian only once its overseas slots are full,
+ * counting this player if he is overseas).
+ * The rules' reserve assumes ₹30 L players always exist; late in a strong pool they may not.
+ */
+export function realisticReserve(auction: Auction, teamId: TeamId, playerId: string): Lakh {
+  const team = auction.team(teamId);
+  const settings = auction.settings;
+  const slots = settings.minSquad - (team.squad.length + 1);
+  if (slots <= 0) return 0;
+  const current = auction.player(playerId);
+  const overseasAfter = team.overseasCount + (current.isOverseas ? 1 : 0);
+  const overseasOk = overseasAfter < settings.maxOverseas;
+  const candidates = new Set<string>([...auction.upcoming.map((q) => q.playerId), ...auction.unsoldPlayers]);
+  candidates.delete(playerId);
+  const prices: Lakh[] = [];
+  for (const id of candidates) {
+    const p = auction.player(id);
+    if (p.isOverseas && !overseasOk) continue;
+    prices.push(p.basePrice);
+  }
+  prices.sort((a, b) => a - b);
+  let reserve = 0;
+  for (let i = 0; i < slots; i++) reserve += prices[i] ?? settings.minBasePrice;
+  return reserve;
+}
+
+/** Largest share of a starting purse an AI will spend on one player. */
+export const MAX_SHARE_OF_PURSE = 0.22;
+
 /** A buy at or above this counts as a marquee buy. */
 export const MARQUEE_PRICE = 1_200;
-/** Marquee buys a team makes before it switches to building depth. */
+/** Marquee buys a team makes before it switches to building depth (in a 25-player squad). */
 export const MAX_MARQUEE_BUYS = 3;
 
 /**

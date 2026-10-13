@@ -5,15 +5,17 @@
   "description": "IPL auction game: up to 10 human franchises, AI bidders for the rest",
   "type": "module",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "apps/*"
   ],
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc -p packages/rules && tsc -p packages/data && tsc -p packages/engine",
+    "typecheck": "tsc -p packages/rules && tsc -p packages/data && tsc -p packages/engine && tsc -p packages/protocol && tsc -p apps/server",
     "simulate": "npm run simulate -w @ipl/engine --",
     "seed": "npm run build-seed -w @ipl/data",
-    "test:py": "cd packages/data/scripts/ratings && python3 -m unittest test_compute_ratings.py"
+    "test:py": "cd packages/data/scripts/ratings && python3 -m unittest test_compute_ratings.py",
+    "server": "npm run dev -w @ipl/server"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

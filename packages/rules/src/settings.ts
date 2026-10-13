@@ -40,6 +40,17 @@ export const MINI_DEFAULTS: AuctionSettings = {
   overseasSalaryCap: crore(18),
 };
 
+/**
+ * Squad rules by player-pool size. A shorter auction has fewer players to go round
+ * (Quick: 150 players for 10 teams), so squads shrink to match. The Quick pool is the
+ * 150 most valuable players, so it keeps the full purse.
+ */
+export const POOL_RULES = {
+  quick: { minSquad: 11, maxSquad: 14, maxOverseas: 6, purse: crore(125) },
+  standard: { minSquad: 18, maxSquad: 25, maxOverseas: 8, purse: crore(125) },
+  full: { minSquad: 18, maxSquad: 25, maxOverseas: 8, purse: crore(125) },
+} as const;
+
 export const PURSE_PRESETS = {
   tight: crore(100),
   standard: crore(125),

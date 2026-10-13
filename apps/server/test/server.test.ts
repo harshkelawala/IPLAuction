@@ -1,0 +1,137 @@
+import { createServer, type Server as HttpServer } from 'node:http';
+import type { AddressInfo } from 'node:net';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { io as connect, type Socket } from 'socket.io-client';
+import type { ClientToServer, RoomSnapshot, ServerToClient, SoloSettings } from '@ipl/protocol';
+import { createGameServer } from '../src/server.js';
+
+type Client = Socket<ServerToClient, ClientToServer>;
+
+let http: HttpServer;
+let game: ReturnType<typeof createGameServer>;
+let url: string;
+const clients: Client[] = [];
+
+beforeEach(async () => {
+  http = createServer();
+  // 15 s opening timer becomes 30 ms: a whole 150-player auction runs in a few seconds.
+  game = createGameServer(http, { timeScale: 0.002 });
+  await new Promise<void>((r) => http.listen(0, r));
+  url = `http://localhost:${(http.address() as AddressInfo).port}`;
+});
+
+afterEach(async () => {
+  for (const c of clients.splice(0)) c.close();
+  game.close();
+  await new Promise((r) => http.close(r));
+});
+
+function client(): Client {
+  const c: Client = connect(url, { transports: ['websocket'], forceNew: true });
+  clients.push(c);
+  return c;
+}
+
+const solo: SoloSettings = { teamId: 'CSK', difficulty: 'normal', speed: 'fast', pool: 'quick' };
+
+async function createAndJoin(c: Client, settings = solo) {
+  const created = await c.emitWithAck('solo:create', settings);
+  if (!created.ok) throw new Error(created.error);
+  const joined = await c.emitWithAck('room:join', created.data);
+  if (!joined.ok) throw new Error(joined.error);
+  return { ...created.data, welcome: joined.data };
+}
+
+function waitFor(c: Client, pred: (s: RoomSnapshot) => boolean, timeoutMs = 20_000): Promise<RoomSnapshot> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('timed out waiting for state')), timeoutMs);
+    const on = (s: RoomSnapshot) => {
+      if (pred(s)) {
+        clearTimeout(timer);
+        c.off('room:state', on);
+        resolve(s);
+      }
+    };
+    c.on('room:state', on);
+  });
+}
+
+describe('game server', () => {
+  it('rejects bad settings', async () => {
+    const c = client();
+    const res = await c.emitWithAck('solo:create', { ...solo, teamId: 'XYZ' as never });
+    expect(res).toEqual({ ok: false, error: 'Pick one of the 10 teams' });
+  });
+
+  it('only lets the room owner join', async () => {
+    const c = client();
+    const { roomId } = await createAndJoin(c);
+    const other = client();
+    expect(await other.emitWithAck('room:join', { roomId, token: 'nope' })).toMatchObject({ ok: false });
+  });
+
+  it('sends the player pool without ratings or fair values', async () => {
+    const c = client();
+    const { welcome } = await createAndJoin(c);
+    expect(welcome.players).toHaveLength(150);
+    expect(Object.keys(welcome.players[0] as object)).not.toContain('fairValue');
+    expect(Object.keys(welcome.players[0] as object)).not.toContain('rating');
+  });
+
+  it('accepts a human bid and plays a full auction with 9 AI teams', async () => {
+    const c = client();
+    const first = waitFor(c, (s) => s.lot !== null);
+    await createAndJoin(c);
+    const s = await first;
+    expect(s.you).toBe('CSK');
+    // AIs react within a millisecond at this time scale, so bid on the freshest state until one lands.
+    let latest = s;
+    c.on('room:state', (x) => (latest = x));
+    let accepted = false;
+    for (let i = 0; i < 200 && !accepted; i++) {
+      if (latest.lot?.yourBid.ok) {
+        const res = await c.emitWithAck('bid:place', { amount: latest.lot.nextBid });
+        accepted = res.ok && res.data.ok;
+      } else {
+        await new Promise((r) => setTimeout(r, 1));
+      }
+    }
+    expect(accepted).toBe(true);
+
+    const end = await waitFor(c, (x) => x.phase === 'done');
+    for (const t of end.teams) {
+      expect(t.squad.length).toBeLessThanOrEqual(end.settings.maxSquad);
+      expect(t.overseasCount).toBeLessThanOrEqual(end.settings.maxOverseas);
+      expect(t.purse).toBeGreaterThanOrEqual(0);
+      if (t.controller === 'ai') expect(t.squad.length).toBeGreaterThanOrEqual(end.settings.minSquad);
+    }
+    expect(end.teams.find((t) => t.id === 'CSK')?.controller).toBe('human');
+    expect(end.log.length).toBeGreaterThan(0);
+  }, 30_000);
+
+  it('rejects a stale bid amount', async () => {
+    const c = client();
+    const first = waitFor(c, (s) => s.lot !== null);
+    await createAndJoin(c);
+    const s = await first;
+    const res = await c.emitWithAck('bid:place', { amount: (s.lot?.nextBid as number) + 1 });
+    expect(res).toMatchObject({ ok: true, data: { ok: false } });
+  });
+
+  it('pauses and resumes', async () => {
+    const c = client();
+    const first = waitFor(c, (s) => s.lot !== null);
+    await createAndJoin(c);
+    await first;
+    await c.emitWithAck('room:pause');
+    const paused = await waitFor(c, (s) => s.paused, 2_000).catch(() => null);
+    const room = [...game.rooms.values()][0];
+    expect(room?.isPaused).toBe(true);
+    const done = room?.snapshot().progress.done;
+    await new Promise((r) => setTimeout(r, 200));
+    expect(room?.snapshot().progress.done).toBe(done);
+    expect(paused === null || paused.paused).toBe(true);
+    await c.emitWithAck('room:resume');
+    await waitFor(c, (s) => s.progress.done > (done ?? 0), 5_000);
+  });
+});

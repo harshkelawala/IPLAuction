@@ -14,6 +14,8 @@ export interface AuctionConfig {
   controllers: Record<TeamId, TeamController>;
   /** Seed for the order of players within each set. Same seed, same order. */
   seed: number;
+  /** Timer for the accelerated round; defaults to ACCELERATED_TIMER_MS. */
+  acceleratedTimerMs?: number;
 }
 
 interface QueueItem {
@@ -155,6 +157,22 @@ export class Auction {
     return { check, events: [{ type: 'bid', playerId: lot.playerId, teamId, amount, endsAt: lot.endsAt }] };
   }
 
+  /** Move the current lot's deadline, e.g. to resume after a pause. */
+  setDeadline(endsAt: number): void {
+    if (this.lot) this.lot.endsAt = endsAt;
+  }
+
+  /** Human-readable name of a set, e.g. "Capped batters 2". */
+  setLabel(code: string): string {
+    if (code === 'ACC') return 'Accelerated round';
+    return this.config.sets.find((s) => s.code === code)?.label ?? code;
+  }
+
+  /** Lots closed so far in the main round, and how many it has. */
+  get lotCounts(): { done: number; total: number } {
+    return { done: this.lotsDone, total: this.totalLots };
+  }
+
   /** Close the lot if its timer has run out, then put up the next player. */
   tick(now: number): AuctionEvent[] {
     if (!this.lot || now < this.lot.endsAt) return [];
@@ -164,11 +182,15 @@ export class Auction {
   // ------------------------------------------------------------------ internals
 
   private bidTimer(): number {
-    return this.phase === 'accelerated' ? ACCELERATED_TIMER_MS : this.settings.bidTimerMs;
+    return this.phase === 'accelerated' ? this.acceleratedTimer() : this.settings.bidTimerMs;
   }
 
   private openingTimer(): number {
-    return this.phase === 'accelerated' ? ACCELERATED_TIMER_MS : this.settings.openingTimerMs;
+    return this.phase === 'accelerated' ? this.acceleratedTimer() : this.settings.openingTimerMs;
+  }
+
+  private acceleratedTimer(): number {
+    return this.config.acceleratedTimerMs ?? ACCELERATED_TIMER_MS;
   }
 
   private closeLot(): AuctionEvent[] {
