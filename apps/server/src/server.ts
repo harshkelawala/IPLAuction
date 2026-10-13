@@ -91,6 +91,13 @@ export function createGameServer(http: HttpServer, opts: GameServerOptions = {})
       ack({ ok: true, data: room.bid(room.human, amount) });
     });
 
+    socket.on('lot:skip', (ack) => {
+      const room = roomOf();
+      if (!room) return ack({ ok: false, error: 'Join an auction first' });
+      const res = room.skip();
+      ack(res.ok ? { ok: true, data: null } : { ok: false, error: res.message });
+    });
+
     socket.on('room:pause', (ack) => {
       const room = roomOf();
       if (!room) return ack({ ok: false, error: 'Join an auction first' });

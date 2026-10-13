@@ -74,6 +74,8 @@ describe('game server', () => {
     const c = client();
     const { welcome } = await createAndJoin(c);
     expect(welcome.players).toHaveLength(150);
+    expect(welcome.sets.flatMap((x) => x.playerIds)).toHaveLength(150);
+    expect(welcome.sets[0]?.code).toBe('M1');
     expect(Object.keys(welcome.players[0] as object)).not.toContain('fairValue');
     expect(Object.keys(welcome.players[0] as object)).not.toContain('rating');
   });
@@ -116,6 +118,23 @@ describe('game server', () => {
     const s = await first;
     const res = await c.emitWithAck('bid:place', { amount: (s.lot?.nextBid as number) + 1 });
     expect(res).toMatchObject({ ok: true, data: { ok: false } });
+  });
+
+  it('skips a player: AI teams settle it at once and the next player comes up', async () => {
+    const c = client();
+    const first = waitFor(c, (s) => s.lot !== null);
+    await createAndJoin(c);
+    const s = await first;
+    await c.emitWithAck('room:pause');
+    await c.emitWithAck('room:resume');
+    const room = [...game.rooms.values()][0];
+    const before = room?.snapshot();
+    const res = await c.emitWithAck('lot:skip');
+    expect(res).toEqual({ ok: true, data: null });
+    const after = room?.snapshot();
+    expect(after?.progress.done).toBe((before?.progress.done ?? 0) + 1);
+    expect(after?.lot?.playerId).not.toBe(s.lot?.playerId);
+    expect(after?.log[0]?.kind === 'sold' || after?.log[0]?.kind === 'unsold').toBe(true);
   });
 
   it('pauses and resumes', async () => {

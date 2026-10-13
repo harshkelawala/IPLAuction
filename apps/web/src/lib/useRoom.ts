@@ -1,6 +1,6 @@
 'use client';
 
-import type { BidEvent, PublicPlayer, RoomSnapshot, SoldEvent } from '@ipl/protocol';
+import type { BidEvent, PublicPlayer, RoomSnapshot, SetView, SoldEvent } from '@ipl/protocol';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getSocket, loadRoomToken } from './socket';
 
@@ -13,6 +13,7 @@ export interface RoomState {
   error: string | null;
   snapshot: RoomSnapshot | null;
   players: Map<string, PublicPlayer>;
+  sets: SetView[];
   /** serverNow − Date.now() when the last snapshot arrived. */
   clockOffset: number;
   /** How long the current countdown started at (ms), for the timer ring. */
@@ -28,6 +29,7 @@ export function useRoom(roomId: string) {
     error: null,
     snapshot: null,
     players: new Map(),
+    sets: [],
     clockOffset: 0,
     windowMs: 1,
     lastBid: null,
@@ -51,7 +53,7 @@ export function useRoom(roomId: string) {
         setState((s) => ({ ...s, status: 'error', error: res.error }));
         return;
       }
-      setState((s) => ({ ...s, players: new Map(res.data.players.map((p) => [p.id, p])) }));
+      setState((s) => ({ ...s, players: new Map(res.data.players.map((p) => [p.id, p])), sets: res.data.sets }));
     };
 
     const onState = (snap: RoomSnapshot) => {
@@ -101,11 +103,16 @@ export function useRoom(roomId: string) {
     return res.data.ok ? { ok: true as const } : { ok: false as const, message: res.data.message };
   }, []);
 
+  const skip = useCallback(async () => {
+    const res = await getSocket().emitWithAck('lot:skip');
+    return res.ok ? { ok: true as const } : { ok: false as const, message: res.error };
+  }, []);
+
   const pause = useCallback(() => void getSocket().emitWithAck('room:pause'), []);
   const resume = useCallback(() => void getSocket().emitWithAck('room:resume'), []);
   const clearFlash = useCallback(() => setState((s) => ({ ...s, flash: null })), []);
 
-  return { ...state, bid, pause, resume, clearFlash };
+  return { ...state, bid, skip, pause, resume, clearFlash };
 }
 
 /** Re-render every animation frame while `active`; returns Date.now(). */

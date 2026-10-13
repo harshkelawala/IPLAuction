@@ -1,6 +1,6 @@
 'use client';
 
-import type { PublicPlayer, RoomSnapshot, TeamView } from '@ipl/protocol';
+import type { PublicPlayer, RoomSnapshot, SetView, TeamView } from '@ipl/protocol';
 import type { Role, TeamId } from '@ipl/rules';
 import { formatLakh, squadTargets, teamById } from '@ipl/rules';
 import { useEffect, useState } from 'react';
@@ -21,12 +21,14 @@ export function AuctionScreen({ room }: { room: Room }) {
   const now = useNow(!!lot && !snap.paused);
   const msLeft = lot ? (snap.paused ? (snap.pausedRemainingMs ?? 0) : Math.max(0, lot.endsAt - (now + room.clockOffset))) : 0;
   const [bidError, setBidError] = useState<string | null>(null);
+  const [viewing, setViewing] = useState<TeamId>(you.id);
+  const shown = snap.teams.find((t) => t.id === viewing) ?? you;
 
   useEffect(() => setBidError(null), [lot?.playerId, lot?.bidCount]);
 
   useEffect(() => {
     if (!room.flash) return;
-    const t = setTimeout(room.clearFlash, 1_800);
+    const t = setTimeout(room.clearFlash, 1_300);
     return () => clearTimeout(t);
   }, [room.flash, room.clearFlash]);
 
@@ -36,9 +38,18 @@ export function AuctionScreen({ room }: { room: Room }) {
     if (!res.ok) setBidError(res.message);
   }
 
+  async function skipPlayer() {
+    if (!lot || snap.paused || lot.leader === snap.you) return;
+    const res = await room.skip();
+    if (!res.ok) setBidError(res.message);
+  }
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() === 'b' && !(e.target instanceof HTMLInputElement)) void placeBid();
+      if (e.target instanceof HTMLInputElement || e.metaKey || e.ctrlKey || e.altKey) return;
+      const k = e.key.toLowerCase();
+      if (k === 'b') void placeBid();
+      if (k === 's') void skipPlayer();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -66,7 +77,18 @@ export function AuctionScreen({ room }: { room: Room }) {
       </header>
 
       <div className={styles.layout}>
-        <TeamsRail teams={snap.teams} leader={lot?.leader ?? null} maxSquad={snap.settings.maxSquad} />
+        <TeamsRail
+          teams={snap.teams}
+          leader={lot?.leader ?? null}
+          maxSquad={snap.settings.maxSquad}
+          viewing={viewing}
+          onSelect={(id) => {
+            setViewing(id);
+            if (window.matchMedia('(max-width: 760px)').matches) {
+              document.getElementById('squad-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }}
+        />
 
         <main className={styles.stage}>
           {player && lot ? (
@@ -77,6 +99,7 @@ export function AuctionScreen({ room }: { room: Room }) {
                 msLeft={msLeft}
                 windowMs={room.windowMs}
                 onBid={placeBid}
+                onSkip={skipPlayer}
                 bidError={bidError}
               >
                 {room.flash && <FlashBanner flash={room.flash} players={room.players} you={snap.you} />}
@@ -96,10 +119,12 @@ export function AuctionScreen({ room }: { room: Room }) {
             </div>
           )}
 
+          {room.sets.length > 0 && <PlayersPanel snap={snap} sets={room.sets} players={room.players} />}
+
           <Feed snap={snap} players={room.players} />
         </main>
 
-        <YourSquad team={you} snap={snap} players={room.players} />
+        <SquadPanel team={shown} snap={snap} players={room.players} onShowYours={() => setViewing(you.id)} />
       </div>
     </div>
   );
@@ -160,6 +185,7 @@ function BidPanel({
   msLeft,
   windowMs,
   onBid,
+  onSkip,
   bidError,
   children,
 }: {
@@ -167,6 +193,7 @@ function BidPanel({
   msLeft: number;
   windowMs: number;
   onBid: () => void;
+  onSkip: () => void;
   bidError: string | null;
   children?: React.ReactNode;
 }) {
@@ -198,8 +225,17 @@ function BidPanel({
           <span>Bid</span>
           <span className="num">{formatLakh(lot.nextBid)}</span>
         </button>
+        <button
+          type="button"
+          className={styles.skipButton}
+          onClick={onSkip}
+          disabled={leading || snap.paused}
+          aria-keyshortcuts="s"
+        >
+          Skip player
+        </button>
         <p className={styles.bidHint} aria-live="polite">
-          {bidError ?? reason ?? (leading ? 'Wait for a rival to raise you.' : 'Press B to bid.')}
+          {bidError ?? reason ?? (leading ? 'Wait for a rival to raise you.' : 'B to bid, S to skip this player.')}
         </p>
       </div>
     </section>
@@ -236,13 +272,34 @@ function FlashBanner({
   );
 }
 
-function TeamsRail({ teams, leader, maxSquad }: { teams: TeamView[]; leader: TeamId | null; maxSquad: number }) {
+function TeamsRail({
+  teams,
+  leader,
+  maxSquad,
+  viewing,
+  onSelect,
+}: {
+  teams: TeamView[];
+  leader: TeamId | null;
+  maxSquad: number;
+  viewing: TeamId;
+  onSelect: (id: TeamId) => void;
+}) {
   return (
     <aside className={styles.rail} aria-label="All franchises">
       <h2 className={styles.railTitle}>Franchises</h2>
+      <p className={styles.railHint}>Select a team to see its squad.</p>
       <ol className={styles.teamList}>
         {teams.map((t) => (
-          <li key={t.id} className={styles.teamRow} data-leading={t.id === leader} data-you={t.isYou}>
+          <li key={t.id}>
+            <button
+              type="button"
+              className={styles.teamRow}
+              data-leading={t.id === leader}
+              data-you={t.isYou}
+              aria-pressed={t.id === viewing}
+              onClick={() => onSelect(t.id)}
+            >
             <TeamBadge id={t.id} size={26} />
             <span className={styles.teamName}>
               {t.id}
@@ -252,6 +309,7 @@ function TeamsRail({ teams, leader, maxSquad }: { teams: TeamView[]; leader: Tea
             <span className={styles.teamCounts}>
               {t.squad.length}/{maxSquad} players, {t.overseasCount} overseas
             </span>
+            </button>
           </li>
         ))}
       </ol>
@@ -259,7 +317,17 @@ function TeamsRail({ teams, leader, maxSquad }: { teams: TeamView[]; leader: Tea
   );
 }
 
-function YourSquad({ team, snap, players }: { team: TeamView; snap: RoomSnapshot; players: Map<string, PublicPlayer> }) {
+function SquadPanel({
+  team,
+  snap,
+  players,
+  onShowYours,
+}: {
+  team: TeamView;
+  snap: RoomSnapshot;
+  players: Map<string, PublicPlayer>;
+  onShowYours: () => void;
+}) {
   const targets = squadTargets(snap.settings.maxSquad);
   const byRole = new Map<Role, { p: PublicPlayer; price: number }[]>(ROLES.map((r) => [r, []]));
   for (const s of team.squad) {
@@ -268,15 +336,22 @@ function YourSquad({ team, snap, players }: { team: TeamView; snap: RoomSnapshot
   }
   const short = snap.settings.minSquad - team.squad.length;
   const hints: string[] = [];
-  if (short > 0) hints.push(`Sign ${short} more to reach the minimum of ${snap.settings.minSquad}.`);
-  if ((byRole.get('WK')?.length ?? 0) === 0) hints.push('No wicketkeeper yet.');
-  for (const r of ['BOWL', 'BAT', 'AR'] as Role[]) {
+  if (!team.isYou) {
+    // Hints are advice for your own squad only.
+  } else if (short > 0) hints.push(`Sign ${short} more to reach the minimum of ${snap.settings.minSquad}.`);
+  if (team.isYou && (byRole.get('WK')?.length ?? 0) === 0) hints.push('No wicketkeeper yet.');
+  for (const r of team.isYou ? (['BOWL', 'BAT', 'AR'] as Role[]) : []) {
     const have = byRole.get(r)?.length ?? 0;
     if (have < targets[r] && team.squad.length >= 3) hints.push(`${ROLE_PLURAL[r]}: ${have} of about ${targets[r]}.`);
   }
 
   return (
-    <aside className={styles.squad} aria-label="Your squad">
+    <aside className={styles.squad} aria-label={team.isYou ? 'Your squad' : `${teamById(team.id).name} squad`} id="squad-panel">
+      {!team.isYou && (
+        <button type="button" className={styles.backButton} onClick={onShowYours}>
+          Show your squad
+        </button>
+      )}
       <div className={styles.squadHead}>
         <TeamBadge id={team.id} size={36} />
         <div>
@@ -297,7 +372,9 @@ function YourSquad({ team, snap, players }: { team: TeamView; snap: RoomSnapshot
         </ul>
       )}
       {team.squad.length === 0 ? (
-        <p className={styles.empty}>Your squad is empty. Bid on a player to sign them.</p>
+        <p className={styles.empty}>
+          {team.isYou ? 'Your squad is empty. Bid on a player to sign them.' : 'No players signed yet.'}
+        </p>
       ) : (
         ROLES.map((r) => {
           const list = byRole.get(r) ?? [];
@@ -360,5 +437,130 @@ function Feed({ snap, players }: { snap: RoomSnapshot; players: Map<string, Publ
         })}
       </ul>
     </section>
+  );
+}
+
+type PlayerStatus =
+  | { kind: 'up' }
+  | { kind: 'sold'; teamId: TeamId; price: number }
+  | { kind: 'unsold' }
+  | { kind: 'next' }
+  | { kind: 'later' };
+
+function PlayersPanel({
+  snap,
+  sets,
+  players,
+}: {
+  snap: RoomSnapshot;
+  sets: SetView[];
+  players: Map<string, PublicPlayer>;
+}) {
+  const [tab, setTab] = useState<'set' | 'upcoming'>('set');
+  const lot = snap.lot;
+
+  const sold = new Map<string, { teamId: TeamId; price: number }>();
+  for (const t of snap.teams) for (const s of t.squad) sold.set(s.playerId, { teamId: t.id, price: s.price });
+  const unsold = new Set(snap.unsold);
+  const nextId = snap.upcoming[0];
+  const setOf = new Map<string, SetView>();
+  for (const set of sets) for (const id of set.playerIds) setOf.set(id, set);
+
+  const status = (id: string): PlayerStatus => {
+    if (lot?.playerId === id) return { kind: 'up' };
+    const s = sold.get(id);
+    if (s) return { kind: 'sold', ...s };
+    if (id === nextId) return { kind: 'next' };
+    if (snap.upcoming.includes(id)) return { kind: 'later' };
+    if (unsold.has(id)) return { kind: 'unsold' };
+    return { kind: 'later' };
+  };
+
+  // The current set: in the accelerated round, the players brought back.
+  const accelerated = lot?.setCode === 'ACC';
+  const currentSet = accelerated ? null : sets.find((s) => s.code === lot?.setCode);
+  const setIds = accelerated ? [lot!.playerId, ...snap.upcoming] : (currentSet?.playerIds ?? []);
+  const setTitle = accelerated ? 'Accelerated round' : (currentSet?.label ?? 'Current set');
+
+  // Coming up: the next 24 players in order, grouped by set.
+  const upcoming = snap.upcoming.slice(0, 24);
+  const groups: { label: string; ids: string[] }[] = [];
+  for (const id of upcoming) {
+    const label = accelerated ? 'Accelerated round' : (setOf.get(id)?.label ?? '');
+    const last = groups.at(-1);
+    if (last && last.label === label) last.ids.push(id);
+    else groups.push({ label, ids: [id] });
+  }
+
+  return (
+    <section className={styles.players} aria-label="Players in the auction">
+      <div className={styles.tabs} role="tablist">
+        <button type="button" role="tab" aria-selected={tab === 'set'} onClick={() => setTab('set')}>
+          This set
+        </button>
+        <button type="button" role="tab" aria-selected={tab === 'upcoming'} onClick={() => setTab('upcoming')}>
+          Coming up <span className={styles.count}>{snap.upcoming.length}</span>
+        </button>
+      </div>
+
+      {tab === 'set' ? (
+        <div role="tabpanel">
+          <h3 className={styles.panelTitle}>{setTitle}</h3>
+          <ul className={styles.playerList}>
+            {setIds.map((id) => (
+              <PlayerRow key={id} player={players.get(id)} status={status(id)} you={snap.you} />
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <div role="tabpanel">
+          {groups.length === 0 ? (
+            <p className={styles.empty}>No more players in this round.</p>
+          ) : (
+            groups.map((g, i) => (
+              <div key={`${g.label}-${i}`}>
+                <h3 className={styles.panelTitle}>{g.label}</h3>
+                <ul className={styles.playerList}>
+                  {g.ids.map((id) => (
+                    <PlayerRow key={id} player={players.get(id)} status={status(id)} you={snap.you} />
+                  ))}
+                </ul>
+              </div>
+            ))
+          )}
+          {snap.upcoming.length > upcoming.length && (
+            <p className={styles.more}>and {snap.upcoming.length - upcoming.length} more after these</p>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function PlayerRow({ player, status, you }: { player?: PublicPlayer; status: PlayerStatus; you: TeamId | null }) {
+  if (!player) return null;
+  return (
+    <li className={styles.playerRow} data-status={status.kind}>
+      <span className={styles.playerName}>
+        {player.name}
+        <span className={styles.playerMeta}>
+          {ROLE_LABEL[player.role]}
+          {player.isOverseas ? ', overseas' : ''}
+          {!player.isCapped ? ', uncapped' : ''}
+        </span>
+      </span>
+      <span className={styles.playerState}>
+        {status.kind === 'up' && <span className={styles.upNow}>Up now</span>}
+        {status.kind === 'next' && <span>Next, base {formatLakh(player.basePrice)}</span>}
+        {status.kind === 'later' && <span>Base {formatLakh(player.basePrice)}</span>}
+        {status.kind === 'unsold' && <span className={styles.unsoldTag}>Unsold</span>}
+        {status.kind === 'sold' && (
+          <span className={styles.soldTo} data-you={status.teamId === you}>
+            <TeamBadge id={status.teamId} size={16} />
+            <span className="num">{formatLakh(status.price)}</span>
+          </span>
+        )}
+      </span>
+    </li>
   );
 }

@@ -82,15 +82,39 @@
   padding: 0;
 }
 
+.teamList li {
+  list-style: none;
+}
+
+.railHint {
+  margin: -4px 0 8px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
 .teamRow {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  color: inherit;
   display: grid;
   grid-template-columns: 30px 1fr auto;
   grid-template-rows: auto auto;
   column-gap: 10px;
   align-items: center;
   padding: 8px 8px;
-  border-bottom: 1px solid var(--line);
   border-radius: var(--radius-small);
+}
+
+.teamRow:hover {
+  background: rgba(246, 247, 249, 0.05);
+}
+
+.teamRow[aria-pressed='true'] {
+  box-shadow: inset 3px 0 0 var(--paper);
+  background: rgba(246, 247, 249, 0.07);
 }
 
 .teamRow svg {
@@ -317,7 +341,7 @@
 
 .bidAction {
   display: grid;
-  gap: 8px;
+  gap: 14px;
   justify-items: center;
   max-width: 240px;
 }
@@ -359,6 +383,25 @@
   box-shadow: none;
 }
 
+.skipButton {
+  width: 100%;
+  padding: 7px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.skipButton:hover:not(:disabled) {
+  border-color: var(--muted);
+  color: var(--paper);
+}
+
+.skipButton:disabled {
+  opacity: 0.45;
+}
+
 .bidHint {
   margin: 0;
   min-height: 1.5em;
@@ -371,9 +414,10 @@
 
 .flash {
   position: absolute;
-  top: 50%;
+  top: 0;
   left: 50%;
   translate: -50% -50%;
+  pointer-events: none;
   z-index: 3;
   display: flex;
   align-items: baseline;
@@ -649,4 +693,134 @@
     white-space: normal;
     width: calc(100% - 16px);
   }
+}
+
+/* ---------------------------------------------------------------- players panel */
+
+.players {
+  padding: 14px 16px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.tabs button {
+  padding: 8px 12px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 600;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.tabs button[aria-selected='true'] {
+  color: var(--paper);
+  border-bottom-color: var(--paper);
+}
+
+.count {
+  margin-left: 4px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.panelTitle {
+  margin: 10px 0 4px;
+  font-size: 1.05rem;
+  color: var(--muted);
+}
+
+.playerList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  column-gap: 24px;
+}
+
+.playerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+  min-width: 0;
+}
+
+.playerRow[data-status='up'] {
+  color: var(--paper);
+  font-weight: 600;
+}
+
+.playerRow[data-status='sold'] .playerName,
+.playerRow[data-status='unsold'] .playerName {
+  color: var(--muted);
+}
+
+.playerName {
+  display: grid;
+  min-width: 0;
+}
+
+.playerMeta {
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.playerState {
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.upNow {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.unsoldTag {
+  font-style: italic;
+}
+
+.soldTo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--paper);
+}
+
+.soldTo[data-you='true'] {
+  color: var(--gold);
+}
+
+.more {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.backButton {
+  margin-bottom: 12px;
+  padding: 5px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  font-size: 0.85rem;
+}
+
+.backButton:hover {
+  border-color: var(--muted);
 }

@@ -3,7 +3,7 @@ import type { Player } from '@ipl/data';
 import { buildSets, mulberry32 } from '@ipl/data';
 import type { AiOptions, AuctionEvent, TeamController } from '@ipl/engine';
 import { Auction, aiBidDelay, aiWantsToBid, assignPersonalities, poolSetup } from '@ipl/engine';
-import type { LogEntry, PublicPlayer, RoomSnapshot, ServerToClient, SoloSettings, Welcome } from '@ipl/protocol';
+import type { LogEntry, PublicPlayer, RoomSnapshot, ServerToClient, SetView, SoloSettings, Welcome } from '@ipl/protocol';
 import type { AuctionSettings, BidCheck, Lakh, TeamId } from '@ipl/rules';
 import { MEGA_DEFAULTS, TEAM_IDS } from '@ipl/rules';
 
@@ -43,6 +43,7 @@ export class Room {
   private readonly rng: () => number;
   private readonly ai: AiOptions;
   private readonly publicPlayers: PublicPlayer[];
+  private readonly sets: SetView[];
   private closeTimer: NodeJS.Timeout | null = null;
   private aiTimer: NodeJS.Timeout | null = null;
   private paused = false;
@@ -75,9 +76,10 @@ export class Room {
         id === this.human ? { kind: 'human' } : { kind: 'ai', personality: personalities[id] },
       ]),
     ) as Record<TeamId, TeamController>;
+    this.sets = buildSets(pool, 'mega');
     this.auction = new Auction({
       players: pool,
-      sets: buildSets(pool, 'mega'),
+      sets: this.sets,
       settings: this.settings,
       controllers,
       seed,
@@ -87,7 +89,11 @@ export class Room {
   }
 
   welcome(): Welcome {
-    return { roomId: this.id, players: this.publicPlayers };
+    return {
+      roomId: this.id,
+      players: this.publicPlayers,
+      sets: this.sets.map((x) => ({ code: x.code, label: x.label, playerIds: [...x.playerIds] })),
+    };
   }
 
   start(): void {
@@ -108,6 +114,30 @@ export class Room {
     const { check, events } = this.auction.placeBid(teamId, amount, this.now());
     if (check.ok) this.handle(events);
     return check;
+  }
+
+  /**
+   * The human sits this player out: the AI teams settle the bidding instantly
+   * (no reaction delays), the hammer falls, and the next player comes up.
+   */
+  skip(): { ok: true } | { ok: false; message: string } {
+    this.lastActivity = this.now();
+    const lot = this.auction.currentLot;
+    if (!lot) return { ok: false, message: 'No player is up' };
+    if (this.paused) return { ok: false, message: 'Resume the auction first' };
+    if (lot.leader === this.human) return { ok: false, message: 'You hold the highest bid. Wait for the hammer or a rival raise.' };
+    this.clearTimers();
+    const now = this.now();
+    for (let i = 0; i < 10_000; i++) {
+      const keen = TEAM_IDS.filter((id) => id !== this.human && aiWantsToBid(this.auction, id, this.ai));
+      if (keen.length === 0) break;
+      const team = keen[Math.floor(this.rng() * keen.length)] as TeamId;
+      const amount = this.auction.nextBidAmount();
+      if (amount === null || !this.auction.placeBid(team, amount, now).check.ok) break;
+    }
+    this.auction.setDeadline(now);
+    this.handle(this.auction.tick(now));
+    return { ok: true };
   }
 
   pause(): void {
@@ -184,6 +214,7 @@ export class Room {
       log: this.log,
       progress: a.lotCounts,
       unsold: [...a.unsoldPlayers],
+      upcoming: a.upcoming.map((q) => q.playerId),
     };
   }
 

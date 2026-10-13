@@ -85,11 +85,21 @@ export interface RoomSnapshot {
   log: LogEntry[];
   progress: { done: number; total: number };
   unsold: string[];
+  /** Players still to come in this round, in the order they will come up. */
+  upcoming: string[];
+}
+
+export interface SetView {
+  code: string;
+  label: string;
+  playerIds: string[];
 }
 
 export interface Welcome {
   roomId: string;
   players: PublicPlayer[];
+  /** Every auction set in the order they come up. */
+  sets: SetView[];
 }
 
 export type Ack<T> = (res: { ok: true; data: T } | { ok: false; error: string }) => void;
@@ -98,6 +108,8 @@ export interface ClientToServer {
   'solo:create': (settings: SoloSettings, ack: Ack<{ roomId: string; token: string }>) => void;
   'room:join': (req: { roomId: string; token: string }, ack: Ack<Welcome>) => void;
   'bid:place': (req: { amount: Lakh }, ack: Ack<BidCheck>) => void;
+  /** Sit out the current player: AI teams settle it instantly and the next player comes up. */
+  'lot:skip': (ack: Ack<null>) => void;
   'room:pause': (ack: Ack<null>) => void;
   'room:resume': (ack: Ack<null>) => void;
 }
