@@ -5,7 +5,7 @@ import type { Player } from '@ipl/data';
 import type { ClientToServer, ServerToClient, SoloSettings } from '@ipl/protocol';
 import { TEAM_IDS } from '@ipl/rules';
 import { Server } from 'socket.io';
-import { Room } from './room.js';
+import { Room } from './room';
 
 export interface GameServerOptions {
   /** Allowed browser origin(s) for CORS, e.g. http://localhost:3000. */

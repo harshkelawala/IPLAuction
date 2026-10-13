@@ -15,7 +15,7 @@ import {
   shuffleSet,
   slugify,
   type Player,
-} from '../src/index.js';
+} from '../src/index';
 
 const rawCsv = readFileSync(join(import.meta.dirname, '..', 'raw', 'squads-2026.csv'), 'utf8');
 const players = buildPlayers(parseCsv(rawCsv));

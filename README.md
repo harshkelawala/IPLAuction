@@ -4,9 +4,20 @@ A web game of the IPL player auction. Up to 10 people each run a real IPL franch
 
 Design doc and execution plan: see the "IPL Auction Game — Design Doc & Execution Plan" doc in the claude.ai project.
 
+## Play it
+
+```bash
+npm install
+npm run dev
+```
+
+Open http://localhost:3000, pick a franchise and start. `npm run dev` runs the game server (port 4000) and the web app (port 3000) together.
+
+Controls: click **Bid** or press **B**. **Pause** stops the clock; closing the tab pauses the auction too, and reopening the link picks it up where you left it.
+
 ## Status
 
-**Phase 0 — data and rules** (in progress)
+**Phase 0 — data and rules** (done)
 
 - [x] Monorepo with TypeScript and Vitest
 - [x] `@ipl/rules`: bid increments, purse reserve rule, squad and overseas limits, bid validation, sale settlement
@@ -15,12 +26,24 @@ Design doc and execution plan: see the "IPL Auction Game — Design Doc & Execut
 - [x] Cricsheet stats pipeline for stats-based ratings (written and tested on synthetic data; needs a run with internet access)
 - [x] Headless 10-AI simulation to check auction prices look realistic
 
-**Phase 1 — solo game** (in progress)
+**Phase 1 — solo game** (done)
 
 - [x] `@ipl/engine`: auction state machine (sets, lots, timers, bids, sold/unsold, accelerated round)
-- [x] AI bidder v1 (value × need × budget × personality × noise, interest, marquee limits)
-- [ ] Game server with real timers
-- [ ] Pages: landing, team picker, live auction screen, results
+- [x] AI bidder v1 (value × need × budget × personality × noise, interest, marquee limits, realistic reserve)
+- [x] Game server with real timers, pause/resume, reconnect (`apps/server`)
+- [x] Screens: landing and team picker, live auction, results (`apps/web`), desktop and mobile
+
+**Phase 2 — multiplayer** (next): rooms with codes, lobby, several humans, Redis snapshots.
+
+### Pool sizes
+
+| Pool | Players | Squad size | Max overseas | Purse |
+| --- | --- | --- | --- | --- |
+| Quick | 150 | 11–14 | 6 | ₹125 cr |
+| Standard | 250 | 18–25 | 8 | ₹125 cr |
+| Full | 272 | 18–25 | 8 | ₹125 cr |
+
+In 100 simulated auctions per pool, every AI team reached its minimum squad.
 
 ### Simulation check (20 mega auctions, all 10 teams AI, 272 players)
 
@@ -37,7 +60,11 @@ Every run: all teams finish with 18–25 players, at most 8 overseas, and a purs
 ## Layout
 
 ```
+apps/
+  server/                Socket.IO game server: rooms, timers, AI bidding (port 4000)
+  web/                   Next.js app: landing, auction screen, results (port 3000)
 packages/
+  protocol/              typed messages between server and browser
   rules/                 shared game rules, used by server and browser
     src/bidding.ts       increments, reserve rule, checkBid, settleSale
     src/settings.ts      mega / mini defaults, purse presets
@@ -58,8 +85,10 @@ packages/
 
 ```bash
 npm install
+npm run dev         # game server + web app
 npm test            # all TypeScript tests
 npm run typecheck
+npm run simulate    # 20 all-AI auctions, price report
 npm run seed        # rebuild packages/data/generated/*.json from raw/
 
 # Stats-based ratings (needs internet access to cricsheet.org)
@@ -68,6 +97,8 @@ python3 compute_ratings.py --download
 python3 -m unittest test_compute_ratings.py
 cd ../../../.. && npm run seed
 ```
+
+Settings: `NEXT_PUBLIC_SERVER_URL` (web, default `http://localhost:4000`), `PORT` and `WEB_ORIGIN` (server). `TIME_SCALE=0.05` on the server speeds every timer up for testing.
 
 ## How players are priced
 

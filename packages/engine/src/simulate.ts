@@ -2,9 +2,9 @@ import type { AuctionSet, Player } from '@ipl/data';
 import { mulberry32 } from '@ipl/data';
 import type { AuctionSettings, TeamId } from '@ipl/rules';
 import { TEAM_IDS } from '@ipl/rules';
-import { aiBidDelay, aiWantsToBid, assignPersonalities, type AiOptions } from './ai.js';
-import { Auction } from './auction.js';
-import type { Difficulty, TeamController } from './types.js';
+import { aiBidDelay, aiWantsToBid, assignPersonalities, type AiOptions } from './ai';
+import { Auction } from './auction';
+import type { Difficulty, TeamController } from './types';
 
 export interface SimulationOptions {
   players: Player[];

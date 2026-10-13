@@ -9,3 +9,7 @@ coverage/
 packages/data/scripts/ratings/cache/
 __pycache__/
 .venv/
+
+# Next.js
+.next/
+*.tsbuildinfo

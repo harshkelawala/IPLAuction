@@ -1,5 +1,5 @@
 import type { Lakh, Role } from '@ipl/rules';
-import type { BowlingStyle } from './types.js';
+import type { BowlingStyle } from './types';
 
 /**
  * Fair value curve (see design doc, "Fair value"):

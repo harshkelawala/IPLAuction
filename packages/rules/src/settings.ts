@@ -1,5 +1,5 @@
-import type { AuctionSettings, IncrementSlab } from './types.js';
-import { crore } from './money.js';
+import type { AuctionSettings, IncrementSlab, Role } from './types';
+import { crore } from './money';
 
 /**
  * Bid steps: +₹5 L below ₹1 cr, +₹10 L to ₹2 cr, +₹20 L to ₹5 cr, +₹25 L above.
@@ -56,3 +56,17 @@ export const PURSE_PRESETS = {
   standard: crore(125),
   rich: crore(150),
 } as const;
+
+/** How many of each role a balanced squad aims for, in a 25-player squad (22 of 25 slots). */
+export const SQUAD_TARGET: Record<Role, number> = { BAT: 6, WK: 2, AR: 6, BOWL: 8 };
+
+/** Role targets scaled to the squad size in play (e.g. 14-player squads in a Quick auction). */
+export function squadTargets(maxSquad: number): Record<Role, number> {
+  const k = maxSquad / 25;
+  return {
+    BAT: Math.max(1, Math.round(SQUAD_TARGET.BAT * k)),
+    WK: Math.max(1, Math.round(SQUAD_TARGET.WK * k)),
+    AR: Math.max(1, Math.round(SQUAD_TARGET.AR * k)),
+    BOWL: Math.max(2, Math.round(SQUAD_TARGET.BOWL * k)),
+  };
+}

@@ -3,7 +3,7 @@ import type { AddressInfo } from 'node:net';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { io as connect, type Socket } from 'socket.io-client';
 import type { ClientToServer, RoomSnapshot, ServerToClient, SoloSettings } from '@ipl/protocol';
-import { createGameServer } from '../src/server.js';
+import { createGameServer } from '../src/server';
 
 type Client = Socket<ServerToClient, ClientToServer>;
 

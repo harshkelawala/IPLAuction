@@ -1,8 +1,8 @@
 import type { Player } from '@ipl/data';
 import type { Lakh, Role, TeamId } from '@ipl/rules';
-import { maxAffordableBid } from '@ipl/rules';
-import type { Auction } from './auction.js';
-import type { Difficulty, Personality } from './types.js';
+import { SQUAD_TARGET, maxAffordableBid, squadTargets } from '@ipl/rules';
+import type { Auction } from './auction';
+import type { Difficulty, Personality } from './types';
 
 /**
  * AI bidding (design doc, "AI team bidding"):
@@ -11,19 +11,7 @@ import type { Difficulty, Personality } from './types.js';
  * An AI keeps bidding while the next bid is at or below its max price.
  */
 
-/** How many of each role an AI aims for in a 25-player squad (22 of the 25 slots). */
-export const SQUAD_TARGET: Record<Role, number> = { BAT: 6, WK: 2, AR: 6, BOWL: 8 };
-
-/** Role targets scaled to the squad size in play (e.g. 14-player squads in a Quick auction). */
-export function squadTargets(maxSquad: number): Record<Role, number> {
-  const k = maxSquad / 25;
-  return {
-    BAT: Math.max(1, Math.round(SQUAD_TARGET.BAT * k)),
-    WK: Math.max(1, Math.round(SQUAD_TARGET.WK * k)),
-    AR: Math.max(1, Math.round(SQUAD_TARGET.AR * k)),
-    BOWL: Math.max(2, Math.round(SQUAD_TARGET.BOWL * k)),
-  };
-}
+export { SQUAD_TARGET, squadTargets };
 
 const total = (t: Record<Role, number>) => t.BAT + t.WK + t.AR + t.BOWL;
 

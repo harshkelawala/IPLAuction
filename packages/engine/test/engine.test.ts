@@ -13,7 +13,7 @@ import {
   personalityMultiplier,
   simulateAuction,
   type TeamController,
-} from '../src/index.js';
+} from '../src/index';
 
 const s = MEGA_DEFAULTS;
 const allAi = Object.fromEntries(TEAM_IDS.map((id) => [id, { kind: 'ai', personality: 'balanced' }])) as Record<

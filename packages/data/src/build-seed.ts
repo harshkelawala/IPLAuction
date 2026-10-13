@@ -15,9 +15,9 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { formatLakh } from '@ipl/rules';
-import { parseCsv } from './csv.js';
-import { buildPlayers } from './players.js';
-import { buildSets } from './sets.js';
+import { parseCsv } from './csv';
+import { buildPlayers } from './players';
+import { buildSets } from './sets';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const raw = (f: string) => join(root, 'raw', f);

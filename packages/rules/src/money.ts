@@ -1,4 +1,4 @@
-import type { Lakh } from './types.js';
+import type { Lakh } from './types';
 
 /** Convert crore to lakh, rounding to a whole lakh. */
 export const crore = (cr: number): Lakh => Math.round(cr * 100);

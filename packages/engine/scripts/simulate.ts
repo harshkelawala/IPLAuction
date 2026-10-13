@@ -11,8 +11,8 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { buildPlayers, buildSets, parseCsv } from '@ipl/data';
 import { MEGA_DEFAULTS, formatLakh } from '@ipl/rules';
-import { simulateAuction } from '../src/simulate.js';
-import type { Difficulty } from '../src/types.js';
+import { simulateAuction } from '../src/simulate';
+import type { Difficulty } from '../src/types';
 
 const args = process.argv.slice(2);
 const arg = (name: string, fallback: string) => {

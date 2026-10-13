@@ -13,7 +13,7 @@ import {
   settleSale,
   type LotPlayer,
   type TeamState,
-} from '../src/index.js';
+} from '../src/index';
 
 const s = MEGA_DEFAULTS;
 const indianBat: LotPlayer = { id: 'p1', role: 'BAT', isOverseas: false, basePrice: crore(2) };

@@ -6,7 +6,7 @@ import type {
   LotPlayer,
   TeamId,
   TeamState,
-} from './types.js';
+} from './types';
 
 /** The step that applies on top of the current bid. */
 export function incrementFor(current: Lakh, slabs: IncrementSlab[]): Lakh {

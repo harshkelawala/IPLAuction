@@ -1,5 +1,5 @@
 import type { AuctionMode } from '@ipl/rules';
-import type { AuctionSet, Category, Player } from './types.js';
+import type { AuctionSet, Category, Player } from './types';
 
 const CATEGORY_ORDER: Category[] = ['BA', 'AL', 'WK', 'FA', 'SP'];
 

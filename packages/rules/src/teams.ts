@@ -1,4 +1,4 @@
-import type { TeamId } from './types.js';
+import type { TeamId } from './types';
 
 export interface TeamInfo {
   id: TeamId;

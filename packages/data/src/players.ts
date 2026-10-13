@@ -1,7 +1,7 @@
 import type { Role, TeamId } from '@ipl/rules';
 import { TEAM_IDS } from '@ipl/rules';
-import type { BowlingStyle, Category, Player, RatingSource } from './types.js';
-import { basePriceFromRating, clampRating, fairValue, isPace, ratingFromPrice } from './valuation.js';
+import type { BowlingStyle, Category, Player, RatingSource } from './types';
+import { basePriceFromRating, clampRating, fairValue, isPace, ratingFromPrice } from './valuation';
 
 const ROLES: readonly Role[] = ['BAT', 'BOWL', 'AR', 'WK'];
 const STYLES: readonly BowlingStyle[] = ['RF', 'RFM', 'RM', 'LF', 'LFM', 'LM', 'OB', 'LB', 'SLA', 'LWS', 'UNO'];

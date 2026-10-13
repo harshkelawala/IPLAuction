@@ -2,7 +2,7 @@ import type { AuctionSet, Player } from '@ipl/data';
 import { mulberry32, shuffleSet } from '@ipl/data';
 import type { AuctionSettings, BidCheck, Lakh, LotPlayer, TeamId, TeamState } from '@ipl/rules';
 import { TEAM_IDS, checkBid, nextBid, settleSale } from '@ipl/rules';
-import type { AuctionEvent, Lot, Phase, Sale, TeamController, TeamRuntime } from './types.js';
+import type { AuctionEvent, Lot, Phase, Sale, TeamController, TeamRuntime } from './types';
 
 /** Timer for both opening and bids in the accelerated round. */
 export const ACCELERATED_TIMER_MS = 5_000;
