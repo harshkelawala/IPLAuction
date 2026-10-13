@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc -p packages/rules && tsc -p packages/data",
-    "seed": "npm run build-seed -w @ipl/data"
+    "seed": "npm run build-seed -w @ipl/data",
+    "test:py": "cd packages/data/scripts/ratings && python3 -m unittest test_compute_ratings.py"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

@@ -1,0 +1,5 @@
+# Hand corrections to player ratings. Highest priority: beats Cricsheet and price-derived ratings.
+# id is the player's slug (lowercase, hyphens), e.g. virat-kohli. rating is 0-100.
+# Example row (remove the leading #):
+# vaibhav-sooryavanshi,78,price is a youth-retention slab; stats say much better
+id,rating,reason

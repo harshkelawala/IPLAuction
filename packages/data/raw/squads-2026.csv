@@ -1,0 +1,273 @@
+team,name,country,role,bat,bowl,price_lakh,acquired,capped,status,notes
+CSK,Ruturaj Gaikwad,India,BAT,R,OB,1800,retained,1,active,captain
+CSK,Sanju Samson,India,WK,R,,1800,trade,1,active,traded from RR
+CSK,Prashant Veer,India,AR,L,SLA,1420,auction,0,active,
+CSK,Kartik Sharma,India,WK,R,,1420,auction,0,active,
+CSK,Shivam Dube,India,AR,L,RM,1200,retained,1,active,
+CSK,Noor Ahmad,Afghanistan,BOWL,R,LWS,1000,retained,1,active,
+CSK,Rahul Chahar,India,BOWL,R,LB,520,auction,1,active,
+CSK,Khaleel Ahmed,India,BOWL,R,LFM,480,retained,1,withdrawn,quadriceps injury
+CSK,MS Dhoni,India,WK,R,,400,retained,0,active,uncapped under IPL retired-player rule
+CSK,Anshul Kamboj,India,BOWL,R,RFM,340,retained,0,active,
+CSK,Gurjapneet Singh,India,BOWL,R,LFM,220,retained,0,active,
+CSK,Dewald Brevis,South Africa,BAT,R,LB,220,retained,1,active,
+CSK,Akeal Hosein,West Indies,BOWL,L,SLA,200,auction,1,active,
+CSK,Matt Henry,New Zealand,BOWL,R,RFM,200,auction,1,active,
+CSK,Nathan Ellis,Australia,BOWL,R,RFM,200,retained,1,withdrawn,hamstring injury
+CSK,Matthew Short,Australia,AR,R,OB,150,auction,1,active,
+CSK,Spencer Johnson,Australia,BOWL,L,LF,150,replacement,1,active,replaced Nathan Ellis
+CSK,Jamie Overton,England,AR,R,RFM,150,retained,1,withdrawn,thigh injury
+CSK,Dian Forrester,South Africa,AR,L,RFM,75,replacement,0,active,replaced Jamie Overton
+CSK,Zak Foulkes,New Zealand,BOWL,R,RFM,75,auction,1,active,
+CSK,Sarfaraz Khan,India,BAT,R,LB,75,auction,1,active,
+CSK,Aman Hakim Khan,India,AR,R,RFM,40,auction,0,active,
+CSK,Kuldip Yadav,India,BOWL,L,LFM,30,replacement,0,active,replaced Khaleel Ahmed
+CSK,Akash Madhwal,India,BOWL,R,RFM,30,replacement,0,active,replaced Ayush Mhatre
+CSK,Shreyas Gopal,India,BOWL,R,LB,30,retained,0,active,
+CSK,Macneil Noronha,India,AR,R,OB,30,replacement,0,active,replaced Ramakrishna Ghosh
+CSK,Urvil Patel,India,WK,R,,30,retained,0,active,
+CSK,Mukesh Choudhary,India,BOWL,L,LFM,30,retained,0,active,
+CSK,Ramakrishna Ghosh,India,AR,R,RFM,30,retained,0,withdrawn,foot fracture
+CSK,Ayush Mhatre,India,BAT,R,OB,30,retained,0,withdrawn,hamstring injury
+MI,Jasprit Bumrah,India,BOWL,R,RF,1800,retained,1,active,
+MI,Hardik Pandya,India,AR,R,RFM,1635,retained,1,active,captain
+MI,Suryakumar Yadav,India,BAT,R,OB,1635,retained,1,active,
+MI,Rohit Sharma,India,BAT,R,OB,1630,retained,1,active,
+MI,Trent Boult,New Zealand,BOWL,R,LFM,1250,retained,1,active,
+MI,Deepak Chahar,India,BOWL,R,RFM,925,retained,1,active,
+MI,Tilak Varma,India,BAT,L,OB,800,retained,1,active,
+MI,Naman Dhir,India,AR,R,OB,525,retained,0,active,
+MI,Will Jacks,England,AR,R,OB,525,retained,1,active,
+MI,Allah Ghazanfar,Afghanistan,BOWL,R,OB,480,retained,1,active,
+MI,Sherfane Rutherford,West Indies,BAT,L,RFM,260,trade,1,active,traded from GT
+MI,Shardul Thakur,India,AR,R,RM,200,trade,1,active,traded from LSG
+MI,Mitchell Santner,New Zealand,AR,L,SLA,200,retained,1,withdrawn,shoulder injury
+MI,Ryan Rickelton,South Africa,WK,L,,100,retained,1,active,
+MI,Quinton de Kock,South Africa,WK,L,,100,auction,1,withdrawn,wrist injury
+MI,Corbin Bosch,South Africa,AR,R,RFM,75,retained,1,active,
+MI,Keshav Maharaj,South Africa,BOWL,R,SLA,75,replacement,1,active,replaced Mitchell Santner
+MI,Robin Minz,India,WK,L,,65,retained,0,active,
+MI,Mahipal Lomror,India,AR,L,SLA,50,replacement,0,active,replaced Quinton de Kock
+MI,Ashwani Kumar,India,BOWL,L,LFM,30,retained,0,active,
+MI,Mayank Markande,India,BOWL,R,LB,30,trade,1,active,traded from KKR
+MI,Raghu Sharma,India,BOWL,R,LB,30,retained,0,active,
+MI,Krish Bhagat,India,AR,R,RM,30,replacement,0,active,replaced Atharva Ankolekar
+MI,Ruchit Ahir,India,BAT,R,RFM,30,replacement,0,active,replaced Raj Angad Bawa
+MI,Mohammad Izhar,India,BOWL,R,LM,30,auction,0,active,
+MI,Danish Malewar,India,BAT,R,LB,30,auction,0,active,
+MI,Mayank Rawat,India,AR,R,OB,30,auction,0,active,
+MI,Raj Angad Bawa,India,AR,L,RFM,30,retained,0,withdrawn,ligament tear
+MI,Atharva Ankolekar,India,AR,L,SLA,30,auction,0,withdrawn,knee injury
+RCB,Virat Kohli,India,BAT,R,RM,2100,retained,1,active,
+RCB,Josh Hazlewood,Australia,BOWL,L,RFM,1250,retained,1,active,
+RCB,Phil Salt,England,WK,R,,1150,retained,1,active,
+RCB,Jitesh Sharma,India,WK,R,,1150,retained,1,active,
+RCB,Rajat Patidar,India,BAT,R,OB,1100,retained,1,active,captain
+RCB,Bhuvneshwar Kumar,India,BOWL,R,RM,1075,retained,1,active,
+RCB,Venkatesh Iyer,India,AR,L,RM,700,auction,1,active,
+RCB,Rasikh Salam,India,BOWL,R,RFM,600,retained,0,active,
+RCB,Krunal Pandya,India,AR,L,SLA,575,retained,1,active,
+RCB,Mangesh Yadav,India,BOWL,L,LFM,520,auction,0,active,
+RCB,Yash Dayal,India,BOWL,L,LFM,500,retained,0,active,
+RCB,Tim David,Australia,BAT,R,OB,300,retained,1,active,
+RCB,Suyash Sharma,India,BOWL,R,LB,260,retained,0,active,
+RCB,Jacob Bethell,England,AR,L,SLA,260,retained,1,active,
+RCB,Devdutt Padikkal,India,BAT,L,OB,200,retained,1,active,
+RCB,Jacob Duffy,New Zealand,BOWL,R,RFM,200,auction,1,active,
+RCB,Nuwan Thushara,Sri Lanka,BOWL,R,RFM,160,retained,1,active,
+RCB,Romario Shepherd,West Indies,AR,R,RFM,150,retained,1,active,
+RCB,Jordan Cox,England,WK,R,,75,auction,1,active,
+RCB,Swapnil Singh,India,AR,R,SLA,50,retained,0,active,
+RCB,Abhinandan Singh,India,BOWL,R,RFM,30,retained,0,active,
+RCB,Satvik Deswal,India,AR,L,,30,auction,0,active,role unverified
+RCB,Vicky Ostwal,India,BOWL,R,SLA,30,auction,0,active,
+RCB,Vihaan Malhotra,India,BAT,R,OB,30,auction,0,active,
+RCB,Kanishk Chouhan,India,AR,R,OB,30,auction,0,active,
+KKR,Cameron Green,Australia,AR,R,RFM,2520,auction,1,active,salary capped at 1800 (mini-auction overseas cap)
+KKR,Matheesha Pathirana,Sri Lanka,BOWL,R,RF,1800,auction,1,withdrawn,hamstring injury
+KKR,Rinku Singh,India,BAT,L,OB,1300,retained,1,active,
+KKR,Varun Chakravarthy,India,BOWL,R,LB,1200,retained,1,active,
+KKR,Sunil Narine,West Indies,AR,L,OB,1200,retained,1,active,
+KKR,Mustafizur Rahman,Bangladesh,BOWL,L,LFM,920,auction,1,withdrawn,released
+KKR,Ramandeep Singh,India,AR,R,RM,400,retained,1,active,
+KKR,Harshit Rana,India,BOWL,R,RFM,400,retained,1,withdrawn,knee injury
+KKR,Angkrish Raghuvanshi,India,BAT,R,OB,300,retained,0,active,
+KKR,Tejasvi Singh,India,WK,R,,300,auction,0,active,
+KKR,Rachin Ravindra,New Zealand,AR,L,SLA,200,auction,1,active,
+KKR,Finn Allen,New Zealand,BAT,R,OB,200,auction,1,active,
+KKR,Vaibhav Arora,India,BOWL,R,RFM,180,retained,0,active,
+KKR,Ajinkya Rahane,India,BAT,R,RM,150,retained,1,active,captain
+KKR,Tim Seifert,New Zealand,WK,R,,150,auction,1,active,
+KKR,Rovman Powell,West Indies,BAT,R,RM,150,retained,1,active,
+KKR,Akash Deep,India,BOWL,R,RFM,100,auction,1,withdrawn,lower-back injury
+KKR,Manish Pandey,India,BAT,R,RM,75,retained,1,active,
+KKR,Navdeep Saini,India,BOWL,R,RF,75,replacement,1,active,replaced Harshit Rana
+KKR,Umran Malik,India,BOWL,R,RF,75,retained,1,active,
+KKR,Rahul Tripathi,India,BAT,R,RM,75,auction,1,active,
+KKR,Blessing Muzarabani,Zimbabwe,BOWL,R,RFM,75,replacement,1,active,replaced Mustafizur Rahman
+KKR,Anukul Roy,India,AR,L,SLA,40,retained,0,active,
+KKR,Sarthak Ranjan,India,BAT,R,LB,30,auction,0,active,
+KKR,Kartik Tyagi,India,BOWL,R,RFM,30,auction,0,active,
+KKR,Saurabh Dubey,India,BOWL,R,LFM,30,replacement,0,active,replaced Akash Deep
+KKR,Daksh Kamra,India,BOWL,R,LB,30,auction,0,active,
+KKR,Luvnith Sisodia,India,WK,L,,30,replacement,0,active,replaced Matheesha Pathirana
+KKR,Prashant Solanki,India,BOWL,R,LB,30,auction,0,active,
+SRH,Heinrich Klaasen,South Africa,WK,R,,2300,retained,1,active,
+SRH,Pat Cummins,Australia,BOWL,R,RF,1800,retained,1,active,captain
+SRH,Abhishek Sharma,India,AR,L,SLA,1400,retained,1,active,
+SRH,Travis Head,Australia,BAT,L,OB,1400,retained,1,active,
+SRH,Liam Livingstone,England,AR,R,LB,1300,auction,1,active,
+SRH,Ishan Kishan,India,WK,L,,1125,retained,1,active,
+SRH,Harshal Patel,India,BOWL,R,RM,800,retained,1,active,
+SRH,Nitish Kumar Reddy,India,AR,R,RFM,600,retained,1,active,
+SRH,Jack Edwards,Australia,AR,R,RM,300,auction,0,withdrawn,foot injury
+SRH,Gerald Coetzee,South Africa,BOWL,R,RF,200,replacement,1,active,replaced David Payne
+SRH,Salil Arora,India,WK,R,,150,auction,0,active,
+SRH,David Payne,England,BOWL,R,LFM,150,replacement,1,withdrawn,ankle injury
+SRH,Eshan Malinga,Sri Lanka,BOWL,R,RFM,120,retained,1,active,
+SRH,Jaydev Unadkat,India,BOWL,R,LFM,100,retained,1,active,
+SRH,Brydon Carse,England,AR,R,RF,100,retained,1,withdrawn,injury
+SRH,Kamindu Mendis,Sri Lanka,AR,L,OB,75,retained,1,active,
+SRH,Dilshan Madushanka,Sri Lanka,BOWL,R,LFM,75,replacement,1,active,replaced Brydon Carse
+SRH,Shivam Mavi,India,BOWL,R,RFM,75,auction,1,withdrawn,groin injury
+SRH,RS Ambrish,India,AR,L,RM,45,replacement,0,active,replaced Shivam Mavi
+SRH,Zeeshan Ansari,India,BOWL,R,LB,40,retained,0,active,
+SRH,Harsh Dubey,India,AR,L,SLA,30,retained,0,active,
+SRH,Smaran Ravichandran,India,BAT,L,OB,30,retained,0,active,
+SRH,Praful Hinge,India,BOWL,R,RFM,30,auction,0,active,
+SRH,Krains Fuletra,India,BOWL,R,UNO,30,auction,0,active,
+SRH,Sakib Hussain,India,BOWL,R,RF,30,auction,0,active,
+SRH,Shivang Kumar,India,AR,R,LWS,30,auction,0,active,
+SRH,Amit Kumar,India,BOWL,R,LB,30,auction,0,active,
+SRH,Onkar Tarmale,India,BOWL,R,RFM,30,auction,0,active,
+SRH,Aniket Verma,India,BAT,R,RFM,30,retained,0,active,
+RR,Yashasvi Jaiswal,India,BAT,L,LB,1800,retained,1,active,
+RR,Riyan Parag,India,AR,R,LB,1400,retained,1,active,captain
+RR,Ravindra Jadeja,India,AR,L,SLA,1400,trade,1,active,traded from CSK
+RR,Dhruv Jurel,India,WK,R,,1400,retained,1,active,
+RR,Jofra Archer,England,BOWL,R,RF,1250,retained,1,active,
+RR,Shimron Hetmyer,West Indies,BAT,L,LB,1100,retained,1,active,
+RR,Ravi Bishnoi,India,BOWL,R,LB,720,auction,1,active,
+RR,Tushar Deshpande,India,BOWL,L,RFM,650,retained,1,active,
+RR,Sandeep Sharma,India,BOWL,R,RM,400,retained,1,active,
+RR,Nandre Burger,South Africa,BOWL,L,LFM,350,retained,1,active,
+RR,Adam Milne,New Zealand,BOWL,R,RF,240,auction,1,active,
+RR,Sam Curran,England,AR,L,LFM,240,trade,1,withdrawn,groin injury
+RR,Dasun Shanaka,Sri Lanka,AR,R,RM,200,replacement,1,active,replaced Sam Curran
+RR,Kwena Maphaka,South Africa,BOWL,L,LFM,150,retained,1,active,
+RR,Vaibhav Sooryavanshi,India,BAT,L,SLA,110,retained,0,active,
+RR,Donovan Ferreira,South Africa,BAT,R,OB,100,trade,1,active,traded from DC
+RR,Ravi Singh,India,BAT,L,,95,auction,0,withdrawn,hamstring injury; role unverified
+RR,Yash Raj Punja,India,BOWL,R,RM,90,auction,0,active,
+RR,Shubham Dubey,India,BAT,L,OB,80,retained,0,active,
+RR,Kuldeep Sen,India,BOWL,R,RFM,75,auction,1,active,
+RR,Yudhvir Singh,India,BOWL,R,RFM,35,retained,0,active,
+RR,Lhuan-dre Pretorius,South Africa,WK,L,,30,retained,1,active,
+RR,Vignesh Puthur,India,BOWL,L,LWS,30,auction,0,active,
+RR,Brijesh Sharma,India,BOWL,R,RM,30,auction,0,active,
+RR,Sushant Mishra,India,BOWL,L,LFM,30,auction,0,active,
+RR,Emanjot Chahal,India,AR,R,SLA,30,replacement,0,active,replaced Ravi Singh
+RR,Aman Rao,India,BAT,R,,30,auction,0,active,
+DC,Axar Patel,India,AR,L,SLA,1650,retained,1,active,captain
+DC,KL Rahul,India,WK,R,,1400,retained,1,active,
+DC,Kuldeep Yadav,India,BOWL,L,LWS,1325,retained,1,active,
+DC,Mitchell Starc,Australia,BOWL,L,LF,1175,retained,1,active,
+DC,T. Natarajan,India,BOWL,L,LFM,1075,retained,1,active,
+DC,Tristan Stubbs,South Africa,BAT,R,,1000,retained,1,active,
+DC,Auqib Nabi,India,BOWL,R,RM,840,auction,0,active,
+DC,Mukesh Kumar,India,BOWL,R,RM,800,retained,1,active,
+DC,Nitish Rana,India,BAT,L,OB,420,retained,1,active,
+DC,Abhishek Porel,India,WK,L,,400,retained,0,active,
+DC,Pathum Nissanka,Sri Lanka,BAT,R,,400,auction,1,active,
+DC,Ashutosh Sharma,India,BAT,R,,380,retained,0,active,
+DC,David Miller,South Africa,BAT,L,OB,200,auction,1,active,
+DC,Ben Duckett,England,BAT,L,OB,200,auction,1,active,
+DC,Kyle Jamieson,New Zealand,BOWL,R,RFM,200,auction,1,active,
+DC,Lungi Ngidi,South Africa,BOWL,R,RFM,200,auction,1,active,
+DC,Sameer Rizvi,India,BAT,R,OB,95,retained,0,active,
+DC,Dushmantha Chameera,Sri Lanka,BOWL,R,RF,75,retained,1,active,
+DC,Prithvi Shaw,India,BAT,R,OB,75,auction,1,active,
+DC,Vipraj Nigam,India,AR,R,LB,50,retained,0,active,
+DC,Karun Nair,India,BAT,R,OB,50,retained,1,active,
+DC,Madhav Tiwari,India,AR,R,RFM,40,retained,0,active,
+DC,Tripurana Vijay,India,AR,R,OB,30,retained,0,active,
+DC,Ajay Mandal,India,AR,L,SLA,30,retained,0,active,
+DC,Sahil Parakh,India,BAT,L,LB,30,auction,0,active,
+PBKS,Shreyas Iyer,India,BAT,R,LB,2675,retained,1,active,captain
+PBKS,Arshdeep Singh,India,BOWL,L,LFM,1800,retained,1,active,
+PBKS,Yuzvendra Chahal,India,BOWL,R,LB,1800,retained,1,active,
+PBKS,Marcus Stoinis,Australia,AR,R,RFM,1100,retained,1,active,
+PBKS,Marco Jansen,South Africa,AR,R,LFM,700,retained,1,active,
+PBKS,Shashank Singh,India,BAT,R,RFM,550,retained,0,active,
+PBKS,Ben Dwarshuis,Australia,BOWL,L,LFM,440,auction,1,active,
+PBKS,Nehal Wadhera,India,BAT,L,LB,420,retained,0,active,
+PBKS,Prabhsimran Singh,India,WK,R,,400,retained,0,active,
+PBKS,Priyansh Arya,India,BAT,L,OB,380,retained,0,active,
+PBKS,Cooper Connolly,Australia,AR,L,SLA,300,auction,1,active,
+PBKS,Mitchell Owen,Australia,AR,R,RM,300,retained,1,active,
+PBKS,Azmatullah Omarzai,Afghanistan,AR,R,RFM,240,retained,1,active,
+PBKS,Lockie Ferguson,New Zealand,BOWL,R,RF,200,retained,1,active,
+PBKS,Vijaykumar Vyshak,India,BOWL,R,RFM,180,retained,0,active,
+PBKS,Yash Thakur,India,BOWL,R,RFM,160,retained,0,active,
+PBKS,Harpreet Brar,India,AR,L,SLA,150,retained,0,active,
+PBKS,Vishnu Vinod,India,WK,R,,95,retained,0,active,
+PBKS,Xavier Bartlett,Australia,BOWL,R,RF,80,retained,1,active,
+PBKS,Suryansh Shedge,India,AR,R,RFM,30,retained,0,active,
+PBKS,Praveen Dubey,India,BOWL,R,LB,30,auction,0,active,
+PBKS,Vishal Nishad,India,BOWL,R,LB,30,auction,0,active,
+PBKS,Musheer Khan,India,AR,R,SLA,30,retained,0,active,
+PBKS,Pyla Avinash,India,BAT,R,RM,30,retained,0,active,
+PBKS,Harnoor Singh,India,BAT,L,LB,30,retained,0,active,
+LSG,Rishabh Pant,India,WK,L,,2700,retained,1,active,captain
+LSG,Nicholas Pooran,West Indies,WK,L,,2100,retained,1,active,
+LSG,Mayank Yadav,India,BOWL,R,RF,1100,retained,1,active,
+LSG,Mohammed Shami,India,BOWL,R,RF,1000,trade,1,active,traded from SRH
+LSG,Avesh Khan,India,BOWL,R,RFM,975,retained,1,active,
+LSG,Josh Inglis,Australia,WK,R,,860,auction,1,active,
+LSG,Abdul Samad,India,BAT,R,LB,420,retained,0,active,
+LSG,Ayush Badoni,India,BAT,R,OB,400,retained,0,active,
+LSG,Mohsin Khan,India,BOWL,L,LFM,400,retained,0,active,
+LSG,Mitchell Marsh,Australia,AR,R,RFM,340,retained,1,withdrawn,national duty
+LSG,Mukul Choudhary,India,WK,R,,260,auction,0,active,
+LSG,Shahbaz Ahmed,India,AR,L,SLA,240,retained,1,active,
+LSG,Akshat Raghuwanshi,India,BAT,R,OB,220,auction,0,active,
+LSG,Anrich Nortje,South Africa,BOWL,R,RF,200,auction,1,active,
+LSG,Aiden Markram,South Africa,BAT,R,OB,200,retained,1,active,
+LSG,Wanindu Hasaranga,Sri Lanka,AR,R,LB,200,auction,1,withdrawn,NOC denied
+LSG,Naman Tiwari,India,BOWL,L,LFM,100,auction,0,active,
+LSG,George Linde,South Africa,AR,L,SLA,100,replacement,1,active,replaced Wanindu Hasaranga
+LSG,Matthew Breetzke,South Africa,BAT,R,RM,75,retained,1,active,
+LSG,Manimaran Siddharth,India,BOWL,R,SLA,75,retained,0,active,
+LSG,Arjun Tendulkar,India,AR,L,LFM,30,trade,0,active,traded from MI
+LSG,Prince Yadav,India,BOWL,R,RFM,30,retained,0,active,
+LSG,Arshin Kulkarni,India,AR,R,RFM,30,retained,0,active,
+LSG,Himmat Singh,India,BAT,R,OB,30,retained,0,active,
+LSG,Akash Singh,India,BOWL,R,LFM,30,retained,0,active,
+LSG,Digvesh Rathi,India,BOWL,R,LB,30,retained,0,active,
+GT,Rashid Khan,Afghanistan,BOWL,R,LB,1800,retained,1,active,
+GT,Shubman Gill,India,BAT,R,OB,1650,retained,1,active,captain
+GT,Jos Buttler,England,WK,R,,1575,retained,1,active,
+GT,Mohammed Siraj,India,BOWL,R,RFM,1225,retained,1,active,
+GT,Kagiso Rabada,South Africa,BOWL,L,RF,1075,retained,1,active,
+GT,Prasidh Krishna,India,BOWL,R,RFM,950,retained,1,active,
+GT,Sai Sudharsan,India,BAT,L,LB,850,retained,1,active,
+GT,Jason Holder,West Indies,AR,R,RFM,700,auction,1,active,
+GT,Shahrukh Khan,India,BAT,R,OB,400,retained,0,active,
+GT,Rahul Tewatia,India,AR,L,LB,400,retained,0,active,
+GT,Washington Sundar,India,AR,L,OB,320,retained,1,active,
+GT,Sai Kishore,India,BOWL,L,SLA,200,retained,1,active,
+GT,Glenn Phillips,New Zealand,BAT,R,OB,200,retained,1,active,
+GT,Tom Banton,England,WK,R,,200,auction,1,withdrawn,
+GT,Arshad Khan,India,AR,L,LFM,130,retained,0,active,
+GT,Gurnoor Brar,India,BOWL,L,RFM,130,retained,0,active,
+GT,Ashok Sharma,India,BOWL,R,RFM,90,auction,0,active,
+GT,Jayant Yadav,India,AR,R,OB,75,retained,1,active,
+GT,Ishant Sharma,India,BOWL,R,RFM,75,retained,1,active,
+GT,Connor Esterhuizen,South Africa,WK,R,,75,replacement,0,active,replaced Tom Banton
+GT,Luke Wood,England,BOWL,L,LFM,75,auction,1,active,
+GT,Kumar Kushagra,India,WK,R,,65,retained,0,active,
+GT,Manav Suthar,India,BOWL,L,SLA,30,retained,0,active,
+GT,Kulwant Khejroliya,India,BOWL,L,LFM,30,replacement,0,active,replaced Prithvi Raj
+GT,Anuj Rawat,India,WK,L,,30,retained,0,active,
+GT,Nishant Sindhu,India,AR,L,SLA,30,retained,0,active,
+GT,Prithvi Raj,India,BOWL,L,LM,30,auction,0,withdrawn,
