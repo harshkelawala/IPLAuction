@@ -4,6 +4,8 @@ import type { PublicPlayer, RoomSnapshot, TeamView } from '@ipl/protocol';
 import type { Role } from '@ipl/rules';
 import { formatLakh, teamById } from '@ipl/rules';
 import Link from 'next/link';
+import { useEffect } from 'react';
+import { clearLastRoom } from '@/lib/socket';
 import { ROLE_PLURAL } from '@/lib/format';
 import { TeamBadge } from './TeamBadge';
 import styles from './results.module.css';
@@ -46,6 +48,8 @@ function SquadList({ team, players }: { team: TeamView; players: Map<string, Pub
 export function ResultsScreen({ snapshot, players }: { snapshot: RoomSnapshot; players: Map<string, PublicPlayer> }) {
   const { settings } = snapshot;
   const you = snapshot.teams.find((t) => t.isYou) as TeamView;
+  // A finished auction has nothing to continue.
+  useEffect(() => clearLastRoom(snapshot.roomId), [snapshot.roomId]);
   const spent = (t: TeamView) => settings.purse - t.purse;
   const sales = snapshot.teams
     .flatMap((t) => t.squad.map((s) => ({ team: t.id, ...s })))

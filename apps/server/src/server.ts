@@ -72,13 +72,29 @@ export function createGameServer(http: HttpServer, opts: GameServerOptions = {})
       ack({ ok: true, data: { roomId: room.id, token: room.token } });
     });
 
-    socket.on('room:join', ({ roomId, token }, ack) => {
+    /** Leave the auction this connection is in; with nobody left watching, it pauses. */
+    const leaveCurrent = async () => {
+      const id = socket.data.roomId;
+      if (!id) return;
+      socket.data.roomId = undefined;
+      await socket.leave(id);
+      const room = rooms.get(id);
+      if (!room || room.isDone) return;
+      const watchers = await io.in(id).fetchSockets();
+      if (watchers.length === 0) room.pause('away');
+    };
+
+    socket.on('room:join', async ({ roomId, token }, ack) => {
       const room = rooms.get(roomId);
       if (!room) return ack({ ok: false, error: 'This auction has ended or expired. Start a new one.' });
       if (room.token !== token) return ack({ ok: false, error: 'This auction belongs to another player.' });
+      // One auction per connection: leaving the old one stops it running behind your back.
+      if (socket.data.roomId && socket.data.roomId !== roomId) await leaveCurrent();
       socket.data.roomId = roomId;
-      void socket.join(roomId);
+      await socket.join(roomId);
       room.lastActivity = Date.now();
+      // Back at the table: an auction that paused because you left picks up again.
+      room.resumeIfAway();
       ack({ ok: true, data: room.welcome() });
       socket.emit('room:state', room.snapshot());
     });
@@ -120,12 +136,24 @@ export function createGameServer(http: HttpServer, opts: GameServerOptions = {})
       ack({ ok: true, data: null });
     });
 
+    socket.on('room:peek', ({ roomId, token }, ack) => {
+      const room = rooms.get(roomId);
+      if (!room || room.token !== token || room.isDone) return ack({ ok: true, data: null });
+      const { done, total } = room.auction.lotCounts;
+      ack({ ok: true, data: { phase: room.auction.currentPhase, done, total, teamId: room.human } });
+    });
+
+    socket.on('room:leave', async (ack) => {
+      await leaveCurrent();
+      ack({ ok: true, data: null });
+    });
+
     socket.on('disconnect', async () => {
       const room = roomOf();
       if (!room || room.isDone) return;
       // Solo: nobody is left at the table, so hold the auction until they come back.
       const others = await io.in(room.id).fetchSockets();
-      if (others.length === 0) room.pause();
+      if (others.length === 0) room.pause('away');
     });
   });
 

@@ -57,6 +57,7 @@ export function useRoom(roomId: string) {
     };
 
     const onState = (snap: RoomSnapshot) => {
+      if (snap.roomId !== roomId) return; // another auction's update: not for this screen
       setState((s) => {
         const lot = snap.lot;
         const key = lot ? `${lot.playerId}:${lot.bidCount}` : '';
@@ -68,11 +69,17 @@ export function useRoom(roomId: string) {
         return { ...s, status: 'ready', snapshot: snap, clockOffset: snap.serverNow - Date.now(), windowMs };
       });
     };
-    const onBid = (e: BidEvent) => setState((s) => ({ ...s, lastBid: e }));
-    const onSold = (e: SoldEvent) =>
-      setState((s) => ({ ...s, flash: { kind: 'sold', key: ++flashKey.current, event: e } }));
-    const onUnsold = (e: { playerId: string }) =>
-      setState((s) => ({ ...s, flash: { kind: 'unsold', key: ++flashKey.current, playerId: e.playerId } }));
+    const onBid = (e: BidEvent) => {
+      if (e.roomId === roomId) setState((s) => ({ ...s, lastBid: e }));
+    };
+    const onSold = (e: SoldEvent) => {
+      if (e.roomId === roomId)
+        setState((s) => ({ ...s, flash: { kind: 'sold', key: ++flashKey.current, event: e } }));
+    };
+    const onUnsold = (e: { roomId: string; playerId: string }) => {
+      if (e.roomId === roomId)
+        setState((s) => ({ ...s, flash: { kind: 'unsold', key: ++flashKey.current, playerId: e.playerId } }));
+    };
     const onConnect = () => {
       setState((s) => ({ ...s, connected: true }));
       void join();
@@ -94,6 +101,8 @@ export function useRoom(roomId: string) {
       socket.off('auction:unsold', onUnsold);
       socket.off('connect', onConnect);
       socket.off('disconnect', onDisconnect);
+      // Leaving this screen (Back, the logo, a new auction) pauses this auction.
+      void socket.emitWithAck('room:leave');
     };
   }, [roomId]);
 

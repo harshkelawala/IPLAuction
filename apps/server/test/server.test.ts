@@ -132,7 +132,8 @@ describe('game server', () => {
     const res = await c.emitWithAck('lot:skip');
     expect(res).toEqual({ ok: true, data: null });
     const after = room?.snapshot();
-    expect(after?.progress.done).toBe((before?.progress.done ?? 0) + 1);
+    // At least the skipped player closed (at test speed the next hammer may fall too).
+    expect(after?.progress.done).toBeGreaterThanOrEqual((before?.progress.done ?? 0) + 1);
     expect(after?.lot?.playerId).not.toBe(s.lot?.playerId);
     expect(after?.log[0]?.kind === 'sold' || after?.log[0]?.kind === 'unsold').toBe(true);
   });
@@ -160,6 +161,56 @@ describe('game server', () => {
     const s = await first;
     expect(s.teams.map((t) => t.strength.rank).sort((a, b) => a - b)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
     expect(typeof s.teams[0]?.strength.grade).toBe('string');
+  });
+
+  it('runs one auction per connection: starting a new one pauses the old one', async () => {
+    const c = client();
+    const firstState = waitFor(c, (s) => s.lot !== null);
+    const a = await createAndJoin(c);
+    await firstState;
+    const roomA = game.rooms.get(a.roomId);
+    const b = await createAndJoin(c, { ...solo, teamId: 'MI' });
+    expect(b.roomId).not.toBe(a.roomId);
+    expect(roomA?.isPaused).toBe(true);
+    // From now on this connection only hears about the new auction.
+    const seen = new Set<string>();
+    c.on('room:state', (s) => seen.add(s.roomId));
+    await new Promise((r) => setTimeout(r, 300));
+    expect([...seen]).toEqual([b.roomId]);
+  });
+
+  it('pauses the auction you leave and resumes it when you come back', async () => {
+    const c = client();
+    const firstState = waitFor(c, (s) => s.lot !== null);
+    const a = await createAndJoin(c);
+    await firstState;
+    await c.emitWithAck('room:leave');
+    expect(game.rooms.get(a.roomId)?.isPaused).toBe(true);
+    await c.emitWithAck('room:join', { roomId: a.roomId, token: a.token });
+    expect(game.rooms.get(a.roomId)?.isPaused).toBe(false);
+  });
+
+  it('reports an unfinished auction without resuming it', async () => {
+    const c = client();
+    const firstState = waitFor(c, (s) => s.lot !== null);
+    const a = await createAndJoin(c);
+    await firstState;
+    await c.emitWithAck('room:leave');
+    const peek = await c.emitWithAck('room:peek', { roomId: a.roomId, token: a.token });
+    expect(peek).toMatchObject({ ok: true, data: { teamId: 'CSK' } });
+    expect(game.rooms.get(a.roomId)?.isPaused).toBe(true);
+    expect(await c.emitWithAck('room:peek', { roomId: a.roomId, token: 'wrong' })).toEqual({ ok: true, data: null });
+  });
+
+  it('keeps a pause you pressed yourself when you come back', async () => {
+    const c = client();
+    const firstState = waitFor(c, (s) => s.lot !== null);
+    const a = await createAndJoin(c);
+    await firstState;
+    await c.emitWithAck('room:pause');
+    await c.emitWithAck('room:leave');
+    await c.emitWithAck('room:join', { roomId: a.roomId, token: a.token });
+    expect(game.rooms.get(a.roomId)?.isPaused).toBe(true);
   });
 
   it('pauses and resumes', async () => {

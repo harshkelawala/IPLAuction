@@ -4,9 +4,9 @@ import type { Difficulty, PoolPreset, Speed } from '@ipl/protocol';
 import type { TeamId } from '@ipl/rules';
 import { TEAMS } from '@ipl/rules';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { TeamBadge } from '@/components/TeamBadge';
-import { getSocket, saveRoomToken } from '@/lib/socket';
+import { clearLastRoom, getSocket, loadLastRoom, loadRoomToken, saveLastRoom, saveRoomToken, type LastRoom } from '@/lib/socket';
 import styles from './page.module.css';
 
 const POOLS: { id: PoolPreset; name: string; detail: string }[] = [
@@ -61,6 +61,23 @@ export default function Home() {
   const [difficulty, setDifficulty] = useState<Difficulty>('normal');
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [last, setLast] = useState<(LastRoom & { done: number; total: number }) | null>(null);
+
+  // Read after mounting (localStorage doesn't exist while the page renders on the server),
+  // then ask the server whether that auction is still there.
+  useEffect(() => {
+    const saved = loadLastRoom();
+    const token = saved ? loadRoomToken(saved.roomId) : null;
+    if (!saved || !token) return;
+    getSocket()
+      .timeout(5_000)
+      .emitWithAck('room:peek', { roomId: saved.roomId, token })
+      .then((res) => {
+        if (res.ok && res.data) setLast({ ...saved, done: res.data.done, total: res.data.total });
+        else clearLastRoom(saved.roomId);
+      })
+      .catch(() => undefined);
+  }, []);
 
   async function start() {
     if (!team) return;
@@ -70,6 +87,7 @@ export default function Home() {
       const res = await getSocket().timeout(8_000).emitWithAck('solo:create', { teamId: team, pool, speed, difficulty });
       if (!res.ok) throw new Error(res.error);
       saveRoomToken(res.data.roomId, res.data.token);
+      saveLastRoom({ roomId: res.data.roomId, teamId: team, startedAt: Date.now() });
       router.push(`/auction/${res.data.roomId}`);
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
@@ -93,6 +111,34 @@ export default function Home() {
           budget, needs and temperament.
         </p>
       </header>
+
+      {last && TEAMS.some((t) => t.id === last.teamId) && (
+        <section className={styles.continue} aria-label="Your unfinished auction">
+          <TeamBadge id={last.teamId as TeamId} size={40} title="" />
+          <div className={styles.continueText}>
+            <strong>You have an auction in progress</strong>
+            <span>
+              {TEAMS.find((t) => t.id === last.teamId)?.name}, player {Math.min(last.done + 1, last.total)} of {last.total}.
+              It's paused where you left it and is kept for 30 minutes after you leave.
+            </span>
+          </div>
+          <div className={styles.continueActions}>
+            <button type="button" className={styles.continueButton} onClick={() => router.push(`/auction/${last.roomId}`)}>
+              Continue auction
+            </button>
+            <button
+              type="button"
+              className={styles.discard}
+              onClick={() => {
+                clearLastRoom();
+                setLast(null);
+              }}
+            >
+              Discard
+            </button>
+          </div>
+        </section>
+      )}
 
       <section aria-labelledby="pick-team" className={styles.section}>
         <h2 id="pick-team" className={styles.sectionTitle}>

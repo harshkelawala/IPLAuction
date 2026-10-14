@@ -53,6 +53,8 @@ export class Room {
   private watchlist = new Set<string>();
   private autoSkip = false;
   private paused = false;
+  /** Why the auction is paused: you pressed Pause, or nobody is watching. */
+  private pausedBy: 'user' | 'away' | null = null;
   private pausedRemainingMs: number | null = null;
   private log: LogEntry[] = [];
   private logId = 0;
@@ -155,19 +157,26 @@ export class Room {
     this.schedule();
   }
 
-  pause(): void {
+  pause(by: 'user' | 'away' = 'user'): void {
     const lot = this.auction.currentLot;
     if (this.paused || !lot) return;
     this.paused = true;
+    this.pausedBy = by;
     this.pausedRemainingMs = Math.max(0, lot.endsAt - this.now());
     this.clearTimers();
     this.broadcast();
+  }
+
+  /** Resume only if the auction paused itself because you left (not if you pressed Pause). */
+  resumeIfAway(): void {
+    if (this.pausedBy === 'away') this.resume();
   }
 
   resume(): void {
     if (!this.paused) return;
     this.lastActivity = this.now();
     this.paused = false;
+    this.pausedBy = null;
     // Never resume into a hammer-fall: give at least the bid timer's worth of time.
     const left = Math.max(this.pausedRemainingMs ?? 0, this.settings.bidTimerMs / 2);
     this.auction.setDeadline(this.now() + left);
@@ -267,15 +276,15 @@ export class Room {
     for (const e of events) {
       switch (e.type) {
         case 'bid':
-          this.emit('auction:bid', { playerId: e.playerId, teamId: e.teamId, amount: e.amount });
+          this.emit('auction:bid', { roomId: this.id, playerId: e.playerId, teamId: e.teamId, amount: e.amount });
           break;
         case 'sold':
           this.pushLog({ kind: 'sold', playerId: e.playerId, teamId: e.teamId, price: e.price });
-          this.emit('auction:sold', { playerId: e.playerId, teamId: e.teamId, price: e.price });
+          this.emit('auction:sold', { roomId: this.id, playerId: e.playerId, teamId: e.teamId, price: e.price });
           break;
         case 'unsold':
           this.pushLog({ kind: 'unsold', playerId: e.playerId });
-          this.emit('auction:unsold', { playerId: e.playerId });
+          this.emit('auction:unsold', { roomId: this.id, playerId: e.playerId });
           break;
         case 'phase':
           if (e.phase !== 'main') this.pushLog({ kind: 'phase', phase: e.phase });

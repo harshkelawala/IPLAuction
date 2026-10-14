@@ -3,6 +3,7 @@
 import type { PublicPlayer, RoomSnapshot, SetView, TeamView } from '@ipl/protocol';
 import type { Role, TeamId } from '@ipl/rules';
 import { formatLakh, squadTargets, teamById } from '@ipl/rules';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { ROLE_LABEL, ROLE_PLURAL, initials, styleLine } from '@/lib/format';
 import { useNow, type useRoom } from '@/lib/useRoom';
@@ -23,6 +24,18 @@ export function AuctionScreen({ room }: { room: Room }) {
   const [bidError, setBidError] = useState<string | null>(null);
   const [viewing, setViewing] = useState<TeamId>(you.id);
   const [allSquads, setAllSquads] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  const router = useRouter();
+
+  // Refreshing or closing the tab mid-auction: let the browser ask first.
+  useEffect(() => {
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, []);
   const watch = new Set(snap.watchlist);
   const toggleStar = (id: string) => {
     const next = new Set(watch);
@@ -70,9 +83,9 @@ export function AuctionScreen({ room }: { room: Room }) {
   return (
     <div className={styles.screen}>
       <header className={styles.topbar}>
-        <a href="/" className={styles.brand}>
+        <button type="button" className={styles.brand} onClick={() => setLeaving(true)}>
           IPL Auction
-        </a>
+        </button>
         <p className={styles.where}>
           <span>{lotLabel}</span>
           {lot && <span className={styles.setName}>{lot.setLabel}</span>}
@@ -149,6 +162,33 @@ export function AuctionScreen({ room }: { room: Room }) {
       </div>
 
       {allSquads && <AllSquads snap={snap} players={room.players} onClose={() => setAllSquads(false)} />}
+
+      {leaving && (
+        <div className={styles.modalBackdrop} onClick={() => setLeaving(false)}>
+          <div
+            className={styles.modal}
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="leave-title"
+            aria-describedby="leave-text"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="leave-title">Leave the auction?</h2>
+            <p id="leave-text">
+              It will pause where you are. You can pick it up from the home screen with Continue auction, for up to 30
+              minutes. Starting a new auction instead replaces this one.
+            </p>
+            <div className={styles.modalActions}>
+              <button type="button" className={styles.ghostButton} onClick={() => setLeaving(false)} autoFocus>
+                Stay
+              </button>
+              <button type="button" className={styles.bigButton} onClick={() => router.push('/')}>
+                Leave auction
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

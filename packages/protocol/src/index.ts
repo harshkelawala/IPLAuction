@@ -136,6 +136,13 @@ export type Ack<T> = (res: { ok: true; data: T } | { ok: false; error: string })
 export interface ClientToServer {
   'solo:create': (settings: SoloSettings, ack: Ack<{ roomId: string; token: string }>) => void;
   'room:join': (req: { roomId: string; token: string }, ack: Ack<Welcome>) => void;
+  /** Is this auction still on the server, and how far along? Does not join or resume it. */
+  'room:peek': (
+    req: { roomId: string; token: string },
+    ack: Ack<{ phase: Phase; done: number; total: number; teamId: TeamId } | null>,
+  ) => void;
+  /** Leave the auction on screen; it pauses until you come back. */
+  'room:leave': (ack: Ack<null>) => void;
   'bid:place': (req: { amount: Lakh }, ack: Ack<BidCheck>) => void;
   /** Sit out the current player: AI teams settle it instantly and the next player comes up. */
   'lot:skip': (ack: Ack<null>) => void;
@@ -145,12 +152,12 @@ export interface ClientToServer {
   'room:resume': (ack: Ack<null>) => void;
 }
 
-export type BidEvent = { playerId: string; teamId: TeamId; amount: Lakh };
-export type SoldEvent = { playerId: string; teamId: TeamId; price: Lakh };
+export type BidEvent = { roomId: string; playerId: string; teamId: TeamId; amount: Lakh };
+export type SoldEvent = { roomId: string; playerId: string; teamId: TeamId; price: Lakh };
 
 export interface ServerToClient {
   'room:state': (snapshot: RoomSnapshot) => void;
   'auction:bid': (e: BidEvent) => void;
   'auction:sold': (e: SoldEvent) => void;
-  'auction:unsold': (e: { playerId: string }) => void;
+  'auction:unsold': (e: { roomId: string; playerId: string }) => void;
 }

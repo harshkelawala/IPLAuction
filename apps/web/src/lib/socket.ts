@@ -41,3 +41,37 @@ export function loadRoomToken(roomId: string): string | null {
     return null;
   }
 }
+
+/** The auction you were last playing, so the home screen can offer to continue it. */
+export interface LastRoom {
+  roomId: string;
+  teamId: string;
+  startedAt: number;
+}
+
+const LAST = 'ipl-auction:last-room';
+
+export function saveLastRoom(room: LastRoom): void {
+  try {
+    localStorage.setItem(LAST, JSON.stringify(room));
+  } catch {
+    // Private mode: nothing to continue later.
+  }
+}
+
+export function loadLastRoom(): LastRoom | null {
+  try {
+    const raw = localStorage.getItem(LAST);
+    return raw ? (JSON.parse(raw) as LastRoom) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function clearLastRoom(roomId?: string): void {
+  try {
+    if (!roomId || loadLastRoom()?.roomId === roomId) localStorage.removeItem(LAST);
+  } catch {
+    // ignore
+  }
+}

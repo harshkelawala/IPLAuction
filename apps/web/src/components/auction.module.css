@@ -15,6 +15,9 @@
 }
 
 .brand {
+  padding: 0;
+  border: 0;
+  background: none;
   font-family: var(--display);
   font-weight: 700;
   font-size: 1.3rem;
@@ -1183,4 +1186,46 @@
   margin: 6px 0 0;
   font-size: 0.85rem;
   color: #9fe0b8;
+}
+
+/* ---------------------------------------------------------------- leave dialog */
+
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(5, 15, 30, 0.7);
+}
+
+.modal {
+  width: min(460px, 100%);
+  padding: 24px;
+  border-radius: var(--radius-card);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+}
+
+.modal h2 {
+  font-size: 1.9rem;
+}
+
+.modal p {
+  margin: 10px 0 0;
+  color: var(--muted);
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.modalActions .bigButton {
+  margin-top: 0;
 }
