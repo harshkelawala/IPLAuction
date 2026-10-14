@@ -160,12 +160,14 @@ def iter_ipl_csv(folder: Path):
             d = {
                 "batter": r["Batter"],
                 "bowler": r["Bowler"],
+                "non_striker": r.get("NonStriker", ""),
                 "runs": {"batter": int(r["BatsmanRun"] or 0), "extras": extra_runs, "total": int(r["TotalRun"] or 0)},
             }
             if extras:
                 d["extras"] = extras
             if r["IsWicketDelivery"] == "1" and r["PlayerOut"] not in ("", "NA"):
-                d["wickets"] = [{"player_out": r["PlayerOut"], "kind": r["Kind"]}]
+                fielders = [x.strip() for x in (r.get("FieldersInvolved") or "").split(",") if x.strip() not in ("", "NA")]
+                d["wickets"] = [{"player_out": r["PlayerOut"], "kind": r["Kind"], "fielders": [{"name": x} for x in fielders]}]
             innings[r["ID"]][int(r["Innings"])][int(r["Overs"])].append(d)
     for match_id, inns in innings.items():
         if match_id not in info:
