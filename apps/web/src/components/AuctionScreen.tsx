@@ -287,7 +287,94 @@ function PlayerCard({ player, starred, onStar }: { player: PublicPlayer; starred
           Played for {last.name} in 2026. Base price <strong className="num">{formatLakh(player.basePrice)}</strong>
         </p>
       </div>
+      <FormPanel player={player} />
     </article>
+  );
+}
+
+const COMP_LABEL: Record<string, string> = {
+  ipl: 'IPL', t20s: 'T20I', sma: 'Mushtaq Ali', bbl: 'BBL', psl: 'PSL', cpl: 'CPL', sat: 'SA20', ilt: 'ILT20',
+  mlc: 'MLC', ntb: 'Blast', bpl: 'BPL', lpl: 'LPL', ssm: 'Super Smash', ctc: 'CSA T20',
+};
+const TAG_LABEL: Record<string, string> = {
+  opener: 'Opener', finisher: 'Finisher', powerplay: 'Powerplay bowler', death: 'Death bowler',
+};
+
+/** Form, record and the last 15 matches, so a human can judge the player like a scout would. */
+function FormPanel({ player }: { player: PublicPlayer }) {
+  const s = player.stats;
+  if (!s) {
+    return (
+      <div className={styles.formPanel}>
+        <p className={styles.formEmpty}>No T20 match on record since 2021: an unknown quantity.</p>
+      </div>
+    );
+  }
+  const comps = Object.entries(s.competitions)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4)
+    .map(([c, n]) => `${COMP_LABEL[c] ?? c} ${n}`)
+    .join(' · ');
+  const trend = s.trend >= 1.5 ? 'up' : s.trend <= -1.5 ? 'down' : 'flat';
+  return (
+    <div className={styles.formPanel}>
+      <dl className={styles.formStats}>
+        <div>
+          <dt>Form</dt>
+          <dd className="num">
+            {Math.round(s.form)}
+            <span className={styles.trend} data-trend={trend} aria-label={`trend ${trend}`}>
+              {trend === 'up' ? '▲' : trend === 'down' ? '▼' : '–'}
+            </span>
+          </dd>
+        </div>
+        <div>
+          <dt>Class</dt>
+          <dd className="num">{Math.round(s.class)}</dd>
+        </div>
+        <div>
+          <dt>Big-match</dt>
+          <dd className="num">{Math.round(s.importance)}</dd>
+        </div>
+      </dl>
+      <MatchBars recent={s.recent} />
+      <p className={styles.formMeta}>
+        {s.matches} T20s since 2021: {comps}
+        {s.confidence < 0.5 && <span className={styles.tag}>Limited data</span>}
+        {player.tags.map((t) => (
+          <span key={t} className={styles.tag}>
+            {TAG_LABEL[t] ?? t}
+          </span>
+        ))}
+      </p>
+    </div>
+  );
+}
+
+/** Last 15 matches as bars around the 50 line (an average IPL performance). */
+function MatchBars({ recent }: { recent: NonNullable<PublicPlayer['stats']>['recent'] }) {
+  const w = 10;
+  const gap = 4;
+  const h = 44;
+  const mid = h / 2;
+  return (
+    <figure className={styles.matchBars}>
+      <svg viewBox={`0 0 ${recent.length * (w + gap)} ${h}`} preserveAspectRatio="none" role="img"
+        aria-label="Last matches: bars above the line were better than an average IPL performance">
+        <line x1="0" x2={recent.length * (w + gap)} y1={mid} y2={mid} className={styles.barAxis} />
+        {recent.map((m, i) => {
+          if (m.match === null) return <rect key={i} x={i * (w + gap)} y={mid - 1} width={w} height={2} className={styles.barNone} />;
+          const d = Math.max(-mid + 1, Math.min(mid - 1, ((m.match - 50) / 30) * mid));
+          return (
+            <rect key={i} x={i * (w + gap)} y={d >= 0 ? mid - d : mid} width={w} height={Math.max(1.5, Math.abs(d))}
+              className={d >= 0 ? styles.barGood : styles.barBad}>
+              <title>{`${m.date} vs ${m.against} (${COMP_LABEL[m.comp] ?? m.comp}): ${Math.round(m.match)}`}</title>
+            </rect>
+          );
+        })}
+      </svg>
+      <figcaption>Last {recent.length} matches · line = average IPL performance</figcaption>
+    </figure>
   );
 }
 

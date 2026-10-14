@@ -9,7 +9,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { buildPlayers, buildSets, parseCsv } from '@ipl/data';
+import { buildSets, type Player } from '@ipl/data';
 import { MEGA_DEFAULTS, formatLakh } from '@ipl/rules';
 import { simulateAuction } from '../src/simulate';
 import type { Difficulty } from '../src/types';
@@ -22,8 +22,10 @@ const arg = (name: string, fallback: string) => {
 const runs = Number(arg('runs', '20'));
 const difficulty = arg('difficulty', 'normal') as Difficulty;
 
-const csv = readFileSync(join(import.meta.dirname, '..', '..', 'data', 'raw', 'squads-2026.csv'), 'utf8');
-const players = buildPlayers(parseCsv(csv));
+// The seed the game itself uses (npm run seed), so ratings come from the Player Score.
+const players = JSON.parse(
+  readFileSync(join(import.meta.dirname, '..', '..', 'data', 'generated', 'players-2026.json'), 'utf8'),
+) as Player[];
 const sets = buildSets(players, 'mega');
 const byId = new Map(players.map((p) => [p.id, p]));
 
@@ -142,7 +144,7 @@ row('Teams under 18 players', stats.under18);
 row('Most overseas in a squad', stats.maxOverseas);
 row('Lowest purse left', stats.minPurse, money);
 
-console.log('\n* Ratings are still derived from real prices, so this correlation is circular until Cricsheet ratings are in.');
+console.log('\n* Ratings come from the Player Score, so this is an independent check against what real teams paid.');
 
 const avgPrice = [...priceSum.entries()]
   .map(([id, e]) => ({ p: byId.get(id), avg: e.total / e.n, n: e.n }))

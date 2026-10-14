@@ -1,5 +1,12 @@
 # Squad players whose Cricsheet name the matcher can't work out on its own.
 # id is the squad player's slug; cricsheet_name is exactly as Cricsheet spells it.
+# A blank cricsheet_name means the player has no record and must not be matched to anyone.
 id,cricsheet_name
 vaibhav-sooryavanshi,V Suryavanshi
 varun-chakravarthy,CV Varun
+wanindu-hasaranga,PWH de Silva
+jayant-yadav,J Yadav
+prithvi-raj,Y Prithvi Raj
+prashant-solanki,PH Solanki
+aman-rao,
+kuldip-yadav,

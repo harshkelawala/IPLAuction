@@ -325,7 +325,10 @@ def match_names(squad: list[dict], data: dict[str, PlayerData]) -> dict[str, str
     # Pass 1: manual entries and exact names are certain; reserve them first.
     out: dict[str, str] = {}
     taken: set[str] = set()
+    blocked = {pid for pid, cs in manual.items() if not cs.strip()}  # a blank name means "no record"
     for r in squad:
+        if r["id"] in blocked:
+            continue
         if r["id"] in manual:
             out[r["id"]] = manual[r["id"]]
         elif r["name"] in data:
@@ -336,7 +339,7 @@ def match_names(squad: list[dict], data: dict[str, PlayerData]) -> dict[str, str
     # Pass 2: everyone else, best candidate first; one Cricsheet name per squad player.
     guesses: list[tuple[tuple, str, str]] = []
     for r in squad:
-        if r["id"] in out:
+        if r["id"] in out or r["id"] in blocked:
             continue
         toks = _tokens(r["name"])
         if not toks:

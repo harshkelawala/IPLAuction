@@ -10,7 +10,9 @@ import {
   fairValue,
   mulberry32,
   parseCsv,
+  quantileMap,
   ratingFromPrice,
+  type RawScore,
   selectPool,
   shuffleSet,
   slugify,
@@ -109,6 +111,40 @@ describe('players from the 2026 squads', () => {
       [66, 'cricsheet'],
       [built[2]?.rating, 'price'],
     ]);
+  });
+
+  it('takes ratings from the Player Score by rank, keeping the price-rating spread', () => {
+    const rows = parseCsv(rawCsv);
+    const ids = rows.map((r) => slugify(r.name ?? ''));
+    const raw = (score: number): RawScore => ({
+      cricsheet_name: 'x', score, form: score, class: score, importance: score,
+      batting: { score }, bowling: { score }, confidence: 1, trend: 0, matches: { ipl: 20 },
+      last_match: '2026-05-01', tags: ['death', 'nonsense'], timeline: [['2026-05-01', score]], history: [],
+    });
+    // Give every player a score in reverse squad order, and make the last one the best.
+    const scores = new Map(ids.map((id, i) => [id, raw(40 + i * 0.1)]));
+    scores.delete(ids[0] as string); // no record: newcomer
+    const built = buildPlayers(rows, { scores, overrides: new Map([[ids[1] as string, 77]]) });
+    const priceRatings = buildPlayers(rows).map((p) => p.rating).sort((a, b) => a - b);
+    const ratings = built.map((p) => p.rating);
+    expect(built[0]?.ratingSource).toBe('newcomer');
+    expect(built[1]).toMatchObject({ rating: 77, ratingSource: 'override' });
+    expect(built[2]?.ratingSource).toBe('score');
+    expect(built[2]?.tags).toEqual(['death']);
+    expect(built.at(-1)?.rating).toBe(priceRatings.at(-1));
+    expect(Math.min(...ratings.slice(2))).toBeGreaterThanOrEqual(priceRatings[0] as number);
+    // Higher score, higher (or equal) rating.
+    for (let i = 3; i < built.length; i++) expect(ratings[i]).toBeGreaterThanOrEqual(ratings[i - 1] as number);
+  });
+
+  it('maps scores onto targets by rank', () => {
+    const map = quantileMap([1, 2, 3, 4, 5], [10, 20, 30, 40, 50]);
+    expect(map(1)).toBe(10);
+    expect(map(3)).toBe(30);
+    expect(map(5)).toBe(50);
+    expect(map(2.5)).toBe(25);
+    expect(map(0)).toBe(10);
+    expect(map(9)).toBe(50);
   });
 
   it('rejects bad rows', () => {

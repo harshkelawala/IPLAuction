@@ -6,6 +6,9 @@ import { MAX_OVERSEAS_IN_XI, XI_SIZE } from '@ipl/rules';
  * Team strength, judged on the best legal XI (11 players, at most 4 overseas,
  * a wicketkeeper, 5 bowling options, preferring 2 pace and 1 spin).
  *
+ * Players are judged on the skill they're picked for: batting options on their batting rating,
+ * bowling options on their bowling rating (both from the central Player Score).
+ *
  *   batting  = weighted average of the 6 best batting options: the top order counts most
  *              (weights 1.3, 1.25, 1.15, 1.0, 0.85, 0.75)
  *   bowling  = weighted average of the 5 best bowling options: the two strike bowlers count most
@@ -48,6 +51,8 @@ const PACE = new Set(['RF', 'RFM', 'RM', 'LF', 'LFM', 'LM']);
 const SPIN = new Set(['OB', 'LB', 'SLA', 'LWS', 'UNO']);
 
 const isBattingOption = (p: Player) => p.role === 'BAT' || p.role === 'WK' || p.role === 'AR';
+const bat = (p: Player) => p.battingRating ?? p.rating;
+const bowl = (p: Player) => p.bowlingRating ?? p.rating;
 const isBowlingOption = (p: Player) => p.role === 'BOWL' || p.role === 'AR';
 const isPace = (p: Player) => isBowlingOption(p) && p.bowlingStyle !== null && PACE.has(p.bowlingStyle);
 const isSpin = (p: Player) => isBowlingOption(p) && p.bowlingStyle !== null && SPIN.has(p.bowlingStyle);
@@ -65,7 +70,10 @@ function weightedTop(values: number[], weights: number[], empty: number): number
  * 5 bowling options by rating, then the best batters, then anyone. Overseas capped at 4.
  */
 export function bestXI(squad: Player[]): Player[] {
-  const byRating = [...squad].sort((a, b) => b.rating - a.rating || a.name.localeCompare(b.name));
+  const sortBy = (f: (p: Player) => number) => [...squad].sort((a, b) => f(b) - f(a) || a.name.localeCompare(b.name));
+  const byRating = sortBy((p) => p.rating);
+  const byBatting = sortBy(bat);
+  const byBowling = sortBy(bowl);
   const xi: Player[] = [];
   let overseas = 0;
   const take = (p: Player): boolean => {
@@ -75,17 +83,17 @@ export function bestXI(squad: Player[]): Player[] {
     if (p.isOverseas) overseas++;
     return true;
   };
-  const fill = (pred: (p: Player) => boolean, target: number, count: () => number) => {
-    for (const p of byRating) {
+  const fill = (pred: (p: Player) => boolean, target: number, count: () => number, order = byRating) => {
+    for (const p of order) {
       if (count() >= target) break;
       if (pred(p)) take(p);
     }
   };
-  fill((p) => p.role === 'WK', 1, () => xi.filter((p) => p.role === 'WK').length);
-  fill(isPace, 2, () => xi.filter(isPace).length);
-  fill(isSpin, 1, () => xi.filter(isSpin).length);
-  fill(isBowlingOption, 5, () => xi.filter(isBowlingOption).length);
-  fill(isBattingOption, 6, () => xi.filter(isBattingOption).length);
+  fill((p) => p.role === 'WK', 1, () => xi.filter((p) => p.role === 'WK').length, byBatting);
+  fill(isPace, 2, () => xi.filter(isPace).length, byBowling);
+  fill(isSpin, 1, () => xi.filter(isSpin).length, byBowling);
+  fill(isBowlingOption, 5, () => xi.filter(isBowlingOption).length, byBowling);
+  fill(isBattingOption, 6, () => xi.filter(isBattingOption).length, byBatting);
   fill(() => true, XI_SIZE, () => xi.length);
   return xi;
 }
@@ -94,8 +102,8 @@ export function teamStrength(squad: Player[], settings: Pick<AuctionSettings, 'm
   const xi = bestXI(squad);
   const battingOptions = xi.filter(isBattingOption);
   const bowlingOptions = xi.filter(isBowlingOption);
-  const batting = weightedTop(battingOptions.map((p) => p.rating), BAT_WEIGHTS, EMPTY_XI_PLACE);
-  const bowling = weightedTop(bowlingOptions.map((p) => p.rating), BOWL_WEIGHTS, EMPTY_XI_PLACE);
+  const batting = weightedTop(battingOptions.map(bat), BAT_WEIGHTS, EMPTY_XI_PLACE);
+  const bowling = weightedTop(bowlingOptions.map(bowl), BOWL_WEIGHTS, EMPTY_XI_PLACE);
   const bench = weightedTop(
     squad.filter((p) => !xi.includes(p)).map((p) => p.rating),
     new Array<number>(BENCH_SIZE).fill(1),
@@ -134,7 +142,7 @@ export function teamStrength(squad: Player[], settings: Pick<AuctionSettings, 'm
   }
 
   // Batting variety: a left-hander in the top six upsets bowlers' lines.
-  const topSix = [...battingOptions].sort((a, b) => b.rating - a.rating).slice(0, 6);
+  const topSix = [...battingOptions].sort((a, b) => bat(b) - bat(a)).slice(0, 6);
   if (topSix.some((p) => p.battingHand === 'L')) {
     notes.push('Left-hander in the top six');
     balance += 1;
@@ -171,15 +179,15 @@ export function valueForMoney(overall: number, spentLakh: number): number | null
 }
 
 /**
- * Letter grade for a strength score. Calibrated on 800 simulated squads, where the
- * middle half scored about 87 to 92 and the median about 90: roughly the top 15% get A+,
- * the middle of the field B+, the bottom 10% D.
+ * Letter grade for a strength score. Calibrated on 600 squads from simulated auctions with
+ * Player Score ratings, where the middle half scored about 86.7 to 90.5 and the median 88.5:
+ * roughly the top 15% get A+, the middle of the field B+, the bottom 10% D.
  */
 export function grade(overall: number): string {
-  if (overall >= 93) return 'A+';
-  if (overall >= 91.5) return 'A';
-  if (overall >= 89.5) return 'B+';
-  if (overall >= 87.5) return 'B';
-  if (overall >= 85.5) return 'C';
+  if (overall >= 91.3) return 'A+';
+  if (overall >= 90.3) return 'A';
+  if (overall >= 88.5) return 'B+';
+  if (overall >= 86.7) return 'B';
+  if (overall >= 85.2) return 'C';
   return 'D';
 }

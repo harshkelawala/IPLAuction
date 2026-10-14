@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { buildPlayers, buildSets, parseCsv, type AuctionSet, type Player } from '@ipl/data';
+import { buildSets, type AuctionSet, type Player } from '@ipl/data';
 import { MEGA_DEFAULTS, TEAM_IDS, type TeamId } from '@ipl/rules';
 import {
   ACCELERATED_TIMER_MS,
@@ -33,7 +33,11 @@ function fakePlayer(id: string, over: Partial<Player> = {}): Player {
     bowlingStyle: null,
     category: 'BA',
     rating: 70,
+    battingRating: 70,
+    bowlingRating: 70,
     ratingSource: 'price',
+    tags: [],
+    score: null,
     fairValue: 300,
     basePrice: 100,
     lastTeam: 'CSK',
@@ -179,8 +183,9 @@ describe('AI', () => {
 });
 
 describe('10-AI simulation on the real 2026 pool', () => {
-  const csv = readFileSync(join(import.meta.dirname, '..', '..', 'data', 'raw', 'squads-2026.csv'), 'utf8');
-  const players = buildPlayers(parseCsv(csv));
+  const players = JSON.parse(
+    readFileSync(join(import.meta.dirname, '..', '..', 'data', 'generated', 'players-2026.json'), 'utf8'),
+  ) as Player[];
   const sets = buildSets(players, 'mega');
 
   it.each([1, 2, 3])('seed %i ends with legal, realistic squads', (seed) => {

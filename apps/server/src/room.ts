@@ -403,5 +403,22 @@ export function toPublic(p: Player): PublicPlayer {
     category: p.category,
     basePrice: p.basePrice,
     lastTeam: p.lastTeam,
+    tags: p.tags ?? [],
+    stats: p.score
+      ? {
+          form: p.score.form,
+          class: p.score.class,
+          importance: p.score.importance,
+          batting: p.score.batting,
+          bowling: p.score.bowling,
+          confidence: p.score.confidence,
+          trend: p.score.trend,
+          matches: p.score.matches,
+          competitions: p.score.competitions,
+          lastMatch: p.score.lastMatch,
+          timeline: p.score.timeline,
+          recent: p.score.recent,
+        }
+      : null,
   };
 }

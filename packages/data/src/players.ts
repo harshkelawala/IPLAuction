@@ -1,6 +1,7 @@
 import type { Role, TeamId } from '@ipl/rules';
 import { TEAM_IDS } from '@ipl/rules';
 import type { BowlingStyle, Category, Player, RatingSource } from './types';
+import { NEWCOMER_SCORE, quantileMap, toScoreInfo, toTags, type RawScore } from './score';
 import { basePriceFromRating, clampRating, fairValue, isPace, ratingFromPrice } from './valuation';
 
 const ROLES: readonly Role[] = ['BAT', 'BOWL', 'AR', 'WK'];
@@ -38,15 +39,43 @@ function oneOf<T extends string>(value: string, allowed: readonly T[], field: st
 
 /** Optional ratings from other sources, keyed by player id. */
 export interface RatingInputs {
+  /** The central Player Score (generated/player-score.json), keyed by player id. */
+  scores?: Map<string, RawScore>;
+  /** Older stats ratings (ratings-cricsheet.csv), used only when there is no Player Score file. */
   cricsheet?: Map<string, number>;
   overrides?: Map<string, number>;
 }
 
 /**
  * Turn raw squad rows into game players.
- * Rating priority: manual override > Cricsheet stats > provisional (inverted from contract price).
+ * Rating priority: manual override > Player Score > older Cricsheet rating > contract price.
+ * With a Player Score file, every player's rating comes from the score (a player with no
+ * recorded match gets the newcomer score); contract prices only set the overall spread of
+ * ratings, so the auction economy keeps the scale it was tuned on.
  */
 export function buildPlayers(rows: Record<string, string>[], ratings: RatingInputs = {}): Player[] {
+  const scores = ratings.scores;
+  let toRating: ((s: number) => number) | undefined;
+  let toBatting: ((s: number) => number) | undefined;
+  let toBowling: ((s: number) => number) | undefined;
+  if (scores && scores.size) {
+    const priceRating = (r: Record<string, string>) =>
+      ratingFromPrice(Number(r.price_lakh), {
+        role: r.role as Role,
+        isOverseas: (r.country ?? '') !== 'India',
+        bowlingStyle: (r.bowl || null) as BowlingStyle | null,
+      });
+    const raw = (r: Record<string, string>) => scores.get(slugify(r.name ?? ''));
+    const overall = (r: Record<string, string>) => raw(r)?.score ?? NEWCOMER_SCORE;
+    toRating = quantileMap(rows.map(overall), rows.map(priceRating));
+    // Batting is ranked among the players picked to bat, bowling among those picked to bowl,
+    // so a team's batting and bowling sit on the same scale.
+    const batters = rows.filter((r) => r.role !== 'BOWL');
+    const bowlers = rows.filter((r) => r.role === 'BOWL' || r.role === 'AR');
+    toBatting = quantileMap(batters.map((r) => raw(r)?.batting.score ?? overall(r)), batters.map(priceRating));
+    toBowling = quantileMap(bowlers.map((r) => raw(r)?.bowling.score ?? overall(r)), bowlers.map(priceRating));
+  }
+
   return rows.map((r) => {
     const name = r.name ?? '';
     if (!name) throw new Error('Row without a name');
@@ -62,13 +91,31 @@ export function buildPlayers(rows: Record<string, string>[], ratings: RatingInpu
     const isCapped = r.capped === '1';
     const shape = { role, isOverseas, bowlingStyle };
 
-    let rating: number;
-    let ratingSource: RatingSource;
     const override = ratings.overrides?.get(id);
     const stats = ratings.cricsheet?.get(id);
+    const raw = scores?.get(id);
+    const fromScore =
+      toRating && toBatting && toBowling
+        ? (() => {
+            const s = raw?.score ?? NEWCOMER_SCORE;
+            return {
+              rating: clampRating(toRating(s)),
+              batting: clampRating(toBatting(raw?.batting.score ?? s)),
+              bowling: clampRating(toBowling(raw?.bowling.score ?? s)),
+            };
+          })()
+        : undefined;
+
+    let rating: number;
+    let ratingSource: RatingSource;
+    let battingRating: number | undefined = fromScore?.batting;
+    let bowlingRating: number | undefined = fromScore?.bowling;
     if (override !== undefined) {
       rating = clampRating(override);
       ratingSource = 'override';
+    } else if (fromScore) {
+      rating = fromScore.rating;
+      ratingSource = raw ? 'score' : 'newcomer';
     } else if (stats !== undefined) {
       rating = clampRating(stats);
       ratingSource = 'cricsheet';
@@ -76,6 +123,10 @@ export function buildPlayers(rows: Record<string, string>[], ratings: RatingInpu
       rating = ratingFromPrice(contractPrice, shape);
       ratingSource = 'price';
     }
+
+    // Keep a player's own discipline in line with his overall rating (an override moves both).
+    if (battingRating === undefined || ratingSource === 'override') battingRating = role === 'BOWL' ? Math.min(rating, 45) : rating;
+    if (bowlingRating === undefined || ratingSource === 'override') bowlingRating = role === 'BAT' || role === 'WK' ? Math.min(rating, 45) : rating;
 
     const basePrice = basePriceFromRating(rating, isCapped);
     return {
@@ -89,7 +140,11 @@ export function buildPlayers(rows: Record<string, string>[], ratings: RatingInpu
       bowlingStyle,
       category: categoryFor(role, bowlingStyle),
       rating,
+      battingRating,
+      bowlingRating,
       ratingSource,
+      tags: toTags(raw),
+      score: raw ? toScoreInfo(raw) : null,
       fairValue: fairValue({ rating, ...shape }, basePrice),
       basePrice,
       lastTeam,

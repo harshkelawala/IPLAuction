@@ -14,12 +14,14 @@
     "typecheck": "tsc -p packages/rules && tsc -p packages/data && tsc -p packages/engine && tsc -p packages/protocol && tsc -p apps/server && tsc -p apps/web",
     "simulate": "npm run simulate -w @ipl/engine --",
     "seed": "npm run build-seed -w @ipl/data",
-    "test:py": "cd packages/data/scripts/ratings && python3 -m unittest test_compute_ratings.py",
+    "test:py": "cd packages/data/scripts/ratings && python3 -m unittest test_compute_ratings.py test_player_score.py",
     "server": "npm run dev -w @ipl/server",
     "dev": "concurrently -k -n server,web -c blue,yellow \"npm run dev -w @ipl/server\" \"npm run dev -w @ipl/web\"",
     "web": "npm run dev -w @ipl/web",
     "build": "npm run build -w @ipl/web",
-    "data:fetch": "node packages/data/scripts/fetch-cricsheet.mjs"
+    "data:fetch": "node packages/data/scripts/fetch-cricsheet.mjs",
+    "score": "cd packages/data/scripts/ratings && python3 player_score.py",
+    "ratings:update": "npm run data:fetch && npm run score && npm run seed"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

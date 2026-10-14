@@ -25,4 +25,9 @@ Official franchise sites and iplt20.com were tried first. Most of them blocked a
 ## Known gaps — please review
 
 - **Roles and capped status** were partly inferred from playing style and cricket knowledge, because the sources don't label them consistently. Rows marked `role unverified` in `notes` need checking: Satvik Deswal and Ravi Singh.
-- **Ratings are provisional.** Until `scripts/ratings/compute_ratings.py` is run, each rating is the fair-value curve inverted on the player's contract price. That under-rates bargain buys and youth retentions (e.g. Vaibhav Sooryavanshi at ₹1.1 cr), and over-rates players whose price was set by the retention slabs. Use `rating-overrides.csv` for quick fixes.
+- **Ratings come from the Player Score** (`scripts/ratings/player_score.py`). Contract prices only set the overall spread of ratings. 19 squad players have no recorded T20 match since 2021 and start at the newcomer level; use `rating-overrides.csv` for any you know better.
+- **Syed Mushtaq Ali data on Cricsheet stops at December 2024**, so newer Indian domestic form (and all first-class and 50-over cricket) isn't included.
+
+## Match data
+
+`cricsheet/t20-matches.jsonl.gz`: men's T20 ball-by-ball data since 1 January 2021 from [Cricsheet](https://cricsheet.org) (CC BY 4.0), 14 competitions, slimmed by `npm run data:fetch`. The IPL CSV mirror at github.com/ritesh-ojha/IPL-DATASET fills any IPL gaps. `cricsheet-names.csv` fixes names the matcher gets wrong (a blank name means "no record").

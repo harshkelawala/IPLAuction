@@ -1275,3 +1275,110 @@
     font-size: 0.9rem;
   }
 }
+
+/* ---- Form panel on the lot card ---- */
+.formPanel {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px 24px;
+  align-items: center;
+  padding-top: 16px;
+  border-top: 1px solid rgba(15, 42, 74, 0.12);
+}
+
+.formEmpty {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--muted-ink);
+}
+
+.formStats {
+  display: flex;
+  gap: 20px;
+  margin: 0;
+}
+
+.formStats dt {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted-ink);
+}
+
+.formStats dd {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 1.9rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.trend {
+  margin-left: 4px;
+  font-size: 0.9rem;
+  vertical-align: 6px;
+  color: var(--muted-ink);
+}
+
+.trend[data-trend='up'] {
+  color: var(--turf);
+}
+
+.trend[data-trend='down'] {
+  color: var(--red);
+}
+
+.matchBars {
+  margin: 0;
+  min-width: 0;
+}
+
+.matchBars svg {
+  display: block;
+  width: 100%;
+  height: 44px;
+}
+
+.matchBars figcaption {
+  font-size: 0.75rem;
+  color: var(--muted-ink);
+}
+
+.barAxis {
+  stroke: rgba(15, 42, 74, 0.35);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.barGood {
+  fill: var(--turf);
+}
+
+.barBad {
+  fill: var(--red);
+  opacity: 0.75;
+}
+
+.barNone {
+  fill: rgba(15, 42, 74, 0.25);
+}
+
+.formMeta {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted-ink);
+}
+
+.formMeta .tag {
+  color: var(--ink);
+}
+
+@media (max-width: 720px) {
+  .formPanel {
+    grid-template-columns: 1fr;
+  }
+}

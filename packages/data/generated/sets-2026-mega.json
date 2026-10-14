@@ -3,80 +3,80 @@
     "code": "M1",
     "label": "Marquee 1",
     "playerIds": [
-      "rishabh-pant",
-      "shreyas-iyer",
-      "virat-kohli",
+      "bhuvneshwar-kumar",
+      "vaibhav-sooryavanshi",
+      "yuzvendra-chahal",
       "arshdeep-singh",
-      "jasprit-bumrah",
-      "sanju-samson"
+      "mohammed-shami",
+      "rajat-patidar"
     ]
   },
   {
     "code": "M2",
     "label": "Marquee 2",
     "playerIds": [
-      "ruturaj-gaikwad",
-      "yashasvi-jaiswal",
-      "yuzvendra-chahal",
-      "heinrich-klaasen",
-      "nicholas-pooran",
-      "axar-patel"
+      "mohammed-siraj",
+      "rasikh-salam",
+      "urvil-patel",
+      "kuldeep-yadav",
+      "jos-buttler",
+      "nicholas-pooran"
     ]
   },
   {
     "code": "BA1",
     "label": "Capped batters 1",
     "playerIds": [
-      "travis-head",
-      "rohit-sharma",
+      "finn-allen",
+      "shimron-hetmyer",
+      "tim-david",
+      "dewald-brevis",
+      "shreyas-iyer",
       "shubman-gill",
       "suryakumar-yadav",
-      "shimron-hetmyer",
-      "tristan-stubbs",
-      "rinku-singh",
-      "rajat-patidar"
+      "virat-kohli"
     ]
   },
   {
     "code": "AL1",
     "label": "Capped all-rounders 1",
     "playerIds": [
-      "cameron-green",
-      "liam-livingstone",
       "sunil-narine",
-      "hardik-pandya",
-      "marcus-stoinis",
       "abhishek-sharma",
-      "ravindra-jadeja",
-      "riyan-parag"
+      "mitchell-marsh",
+      "rachin-ravindra",
+      "wanindu-hasaranga",
+      "jason-holder",
+      "corbin-bosch",
+      "jamie-overton"
     ]
   },
   {
     "code": "WK1",
     "label": "Capped wicketkeepers 1",
     "playerIds": [
-      "jos-buttler",
+      "heinrich-klaasen",
+      "lhuan-dre-pretorius",
       "phil-salt",
-      "dhruv-jurel",
-      "kl-rahul",
+      "quinton-de-kock",
+      "ryan-rickelton",
       "josh-inglis",
-      "jitesh-sharma",
-      "ishan-kishan",
-      "tom-banton"
+      "sanju-samson",
+      "ishan-kishan"
     ]
   },
   {
     "code": "FA1",
     "label": "Capped fast bowlers 1",
     "playerIds": [
-      "matheesha-pathirana",
-      "pat-cummins",
-      "jofra-archer",
       "josh-hazlewood",
-      "trent-boult",
-      "mitchell-starc",
       "kagiso-rabada",
-      "mustafizur-rahman"
+      "lungi-ngidi",
+      "jofra-archer",
+      "mitchell-starc",
+      "nathan-ellis",
+      "ben-dwarshuis",
+      "harshit-rana"
     ]
   },
   {
@@ -84,121 +84,121 @@
     "label": "Capped spinners 1",
     "playerIds": [
       "rashid-khan",
-      "noor-ahmad",
-      "kuldeep-yadav",
       "varun-chakravarthy",
+      "noor-ahmad",
+      "sai-kishore",
+      "akeal-hosein",
       "ravi-bishnoi",
-      "allah-ghazanfar",
-      "rahul-chahar",
-      "akeal-hosein"
+      "keshav-maharaj",
+      "allah-ghazanfar"
     ]
   },
   {
     "code": "UBA1",
     "label": "Uncapped batters 1",
     "playerIds": [
+      "ayush-mhatre",
       "shashank-singh",
-      "abdul-samad",
-      "nehal-wadhera",
       "ashutosh-sharma",
-      "ayush-badoni",
       "priyansh-arya",
+      "ayush-badoni",
+      "abdul-samad",
+      "sameer-rizvi",
       "shahrukh-khan",
-      "angkrish-raghuvanshi",
-      "akshat-raghuwanshi",
-      "vaibhav-sooryavanshi"
+      "aniket-verma",
+      "angkrish-raghuvanshi"
     ]
   },
   {
     "code": "UAL1",
     "label": "Uncapped all-rounders 1",
     "playerIds": [
-      "prashant-veer",
-      "naman-dhir",
-      "jack-edwards",
-      "rahul-tewatia",
       "harpreet-brar",
-      "arshad-khan",
-      "dian-forrester",
+      "naman-dhir",
+      "madhav-tiwari",
+      "anukul-roy",
       "mahipal-lomror",
-      "swapnil-singh",
-      "vipraj-nigam"
+      "vipraj-nigam",
+      "dian-forrester",
+      "jack-edwards",
+      "ajay-mandal",
+      "arshad-khan"
     ]
   },
   {
     "code": "UWK1",
     "label": "Uncapped wicketkeepers 1",
     "playerIds": [
-      "kartik-sharma",
-      "abhishek-porel",
-      "ms-dhoni",
       "prabhsimran-singh",
-      "tejasvi-singh",
+      "connor-esterhuizen",
+      "abhishek-porel",
+      "vishnu-vinod",
       "mukul-choudhary",
       "salil-arora",
-      "connor-esterhuizen",
-      "vishnu-vinod",
-      "kumar-kushagra"
+      "anuj-rawat",
+      "kartik-sharma",
+      "kumar-kushagra",
+      "luvnith-sisodia"
     ]
   },
   {
     "code": "UFA1",
     "label": "Uncapped fast bowlers 1",
     "playerIds": [
-      "auqib-nabi",
-      "rasikh-salam",
-      "mangesh-yadav",
-      "yash-dayal",
       "mohsin-khan",
-      "anshul-kamboj",
-      "gurjapneet-singh",
-      "vaibhav-arora",
-      "vijaykumar-vyshak",
-      "yash-thakur"
+      "praful-hinge",
+      "yash-thakur",
+      "mukesh-choudhary",
+      "yudhvir-singh",
+      "akash-singh",
+      "saurabh-dubey",
+      "prince-yadav",
+      "akash-madhwal",
+      "ashwani-kumar"
     ]
   },
   {
     "code": "USP1",
     "label": "Uncapped spinners 1",
     "playerIds": [
-      "suyash-sharma",
       "manimaran-siddharth",
-      "zeeshan-ansari",
+      "vignesh-puthur",
+      "digvesh-rathi",
+      "prashant-solanki",
+      "praveen-dubey",
       "amit-kumar",
       "daksh-kamra",
-      "digvesh-rathi",
       "krains-fuletra",
       "manav-suthar",
-      "prashant-solanki",
-      "praveen-dubey"
+      "shreyas-gopal"
     ]
   },
   {
     "code": "BA2",
     "label": "Capped batters 2",
     "playerIds": [
-      "sai-sudharsan",
       "tilak-varma",
       "pathum-nissanka",
-      "tim-david",
-      "nitish-rana",
-      "sherfane-rutherford",
-      "dewald-brevis",
-      "aiden-markram"
+      "donovan-ferreira",
+      "travis-head",
+      "prithvi-shaw",
+      "rinku-singh",
+      "ben-duckett",
+      "david-miller"
     ]
   },
   {
     "code": "AL2",
     "label": "Capped all-rounders 2",
     "playerIds": [
-      "shivam-dube",
-      "jason-holder",
-      "marco-jansen",
       "will-jacks",
-      "venkatesh-iyer",
-      "nitish-kumar-reddy",
-      "krunal-pandya",
-      "mitchell-marsh"
+      "matthew-short",
+      "mitchell-owen",
+      "sam-curran",
+      "azmatullah-omarzai",
+      "marcus-stoinis",
+      "shardul-thakur",
+      "venkatesh-iyer"
     ]
   },
   {
@@ -206,23 +206,25 @@
     "label": "Capped wicketkeepers 2",
     "playerIds": [
       "tim-seifert",
-      "quinton-de-kock",
-      "ryan-rickelton",
+      "tom-banton",
+      "kl-rahul",
+      "jitesh-sharma",
+      "dhruv-jurel",
       "jordan-cox",
-      "lhuan-dre-pretorius"
+      "rishabh-pant"
     ]
   },
   {
     "code": "FA2",
     "label": "Capped fast bowlers 2",
     "playerIds": [
-      "mohammed-siraj",
-      "bhuvneshwar-kumar",
-      "mayank-yadav",
-      "t-natarajan",
-      "mohammed-shami",
-      "avesh-khan",
+      "jasprit-bumrah",
+      "blessing-muzarabani",
       "deepak-chahar",
+      "dushmantha-chameera",
+      "david-payne",
+      "xavier-bartlett",
+      "adam-milne",
       "prasidh-krishna"
     ]
   },
@@ -230,8 +232,7 @@
     "code": "SP2",
     "label": "Capped spinners 2",
     "playerIds": [
-      "sai-kishore",
-      "keshav-maharaj",
+      "rahul-chahar",
       "mayank-markande"
     ]
   },
@@ -239,201 +240,201 @@
     "code": "UBA2",
     "label": "Uncapped batters 2",
     "playerIds": [
-      "ravi-singh",
-      "sameer-rizvi",
-      "shubham-dubey",
+      "sahil-parakh",
       "aman-rao",
-      "aniket-verma",
-      "ayush-mhatre",
       "danish-malewar",
       "harnoor-singh",
-      "himmat-singh",
-      "pyla-avinash"
+      "pyla-avinash",
+      "ravi-singh",
+      "ruchit-ahir",
+      "sarthak-ranjan",
+      "vihaan-malhotra",
+      "smaran-ravichandran"
     ]
   },
   {
     "code": "UAL2",
     "label": "Uncapped all-rounders 2",
     "playerIds": [
-      "rs-ambrish",
-      "aman-hakim-khan",
-      "anukul-roy",
-      "madhav-tiwari",
-      "ajay-mandal",
-      "arjun-tendulkar",
-      "arshin-kulkarni",
       "atharva-ankolekar",
+      "aman-hakim-khan",
+      "arjun-tendulkar",
+      "swapnil-singh",
+      "nishant-sindhu",
       "emanjot-chahal",
-      "harsh-dubey"
+      "harsh-dubey",
+      "kanishk-chouhan",
+      "macneil-noronha",
+      "mayank-rawat"
     ]
   },
   {
     "code": "UWK2",
     "label": "Uncapped wicketkeepers 2",
     "playerIds": [
-      "robin-minz",
-      "anuj-rawat",
-      "luvnith-sisodia",
-      "urvil-patel"
+      "tejasvi-singh",
+      "ms-dhoni",
+      "robin-minz"
     ]
   },
   {
     "code": "UFA2",
     "label": "Uncapped fast bowlers 2",
     "playerIds": [
-      "gurnoor-brar",
-      "naman-tiwari",
-      "ashok-sharma",
+      "anshul-kamboj",
+      "yash-dayal",
+      "sakib-hussain",
+      "vaibhav-arora",
+      "vijaykumar-vyshak",
       "yash-raj-punja",
-      "yudhvir-singh",
-      "abhinandan-singh",
-      "akash-madhwal",
-      "akash-singh",
-      "ashwani-kumar",
-      "brijesh-sharma"
+      "brijesh-sharma",
+      "kartik-tyagi",
+      "mangesh-yadav",
+      "ashok-sharma"
     ]
   },
   {
     "code": "USP2",
     "label": "Uncapped spinners 2",
     "playerIds": [
-      "raghu-sharma",
-      "shreyas-gopal",
+      "suyash-sharma",
       "vicky-ostwal",
-      "vignesh-puthur",
-      "vishal-nishad"
+      "vishal-nishad",
+      "raghu-sharma",
+      "zeeshan-ansari"
     ]
   },
   {
     "code": "BA3",
     "label": "Capped batters 3",
     "playerIds": [
-      "ben-duckett",
-      "david-miller",
-      "finn-allen",
-      "glenn-phillips",
       "rovman-powell",
-      "devdutt-padikkal",
       "ajinkya-rahane",
-      "donovan-ferreira"
+      "nitish-rana",
+      "yashasvi-jaiswal",
+      "glenn-phillips",
+      "sherfane-rutherford",
+      "rohit-sharma",
+      "rahul-tripathi"
     ]
   },
   {
     "code": "AL3",
     "label": "Capped all-rounders 3",
     "playerIds": [
-      "cooper-connolly",
-      "mitchell-owen",
-      "ramandeep-singh",
-      "jacob-bethell",
-      "azmatullah-omarzai",
-      "sam-curran",
-      "washington-sundar",
-      "dasun-shanaka"
+      "axar-patel",
+      "riyan-parag",
+      "liam-livingstone",
+      "george-linde",
+      "mitchell-santner",
+      "marco-jansen",
+      "cameron-green",
+      "krunal-pandya"
     ]
   },
   {
     "code": "FA3",
     "label": "Capped fast bowlers 3",
     "playerIds": [
-      "harshal-patel",
-      "mukesh-kumar",
-      "ben-dwarshuis",
-      "tushar-deshpande",
-      "nandre-burger",
-      "khaleel-ahmed",
-      "harshit-rana",
-      "sandeep-sharma"
+      "mustafizur-rahman",
+      "nuwan-thushara",
+      "kuldeep-sen",
+      "matheesha-pathirana",
+      "trent-boult",
+      "jacob-duffy",
+      "pat-cummins",
+      "gerald-coetzee"
     ]
   },
   {
     "code": "UBA3",
     "label": "Uncapped batters 3",
     "playerIds": [
-      "ruchit-ahir",
-      "sahil-parakh",
-      "sarthak-ranjan",
-      "smaran-ravichandran",
-      "vihaan-malhotra"
+      "akshat-raghuwanshi",
+      "himmat-singh",
+      "nehal-wadhera",
+      "shubham-dubey"
     ]
   },
   {
     "code": "UAL3",
     "label": "Uncapped all-rounders 3",
     "playerIds": [
-      "kanishk-chouhan",
-      "krish-bhagat",
-      "macneil-noronha",
-      "mayank-rawat",
       "musheer-khan",
-      "nishant-sindhu",
+      "rahul-tewatia",
       "raj-angad-bawa",
       "ramakrishna-ghosh",
+      "rs-ambrish",
       "satvik-deswal",
-      "shivang-kumar"
+      "suryansh-shedge",
+      "prashant-veer",
+      "arshin-kulkarni",
+      "krish-bhagat"
     ]
   },
   {
     "code": "UFA3",
     "label": "Uncapped fast bowlers 3",
     "playerIds": [
-      "kartik-tyagi",
       "kuldip-yadav",
-      "kulwant-khejroliya",
       "mohammad-izhar",
-      "mukesh-choudhary",
+      "naman-tiwari",
       "onkar-tarmale",
-      "praful-hinge",
-      "prince-yadav",
       "prithvi-raj",
-      "sakib-hussain"
+      "sushant-mishra",
+      "abhinandan-singh",
+      "auqib-nabi",
+      "gurjapneet-singh",
+      "gurnoor-brar"
     ]
   },
   {
     "code": "BA4",
     "label": "Capped batters 4",
     "playerIds": [
+      "devdutt-padikkal",
+      "sai-sudharsan",
+      "karun-nair",
+      "ruturaj-gaikwad",
       "matthew-breetzke",
-      "manish-pandey",
-      "prithvi-shaw",
-      "rahul-tripathi",
+      "aiden-markram",
       "sarfaraz-khan",
-      "karun-nair"
+      "manish-pandey"
     ]
   },
   {
     "code": "AL4",
     "label": "Capped all-rounders 4",
     "playerIds": [
-      "mitchell-santner",
-      "rachin-ravindra",
-      "wanindu-hasaranga",
-      "shahbaz-ahmed",
-      "jamie-overton",
-      "matthew-short",
-      "romario-shepherd",
-      "shardul-thakur"
+      "hardik-pandya",
+      "brydon-carse",
+      "washington-sundar",
+      "dasun-shanaka",
+      "jacob-bethell",
+      "nitish-kumar-reddy",
+      "shivam-dube",
+      "romario-shepherd"
     ]
   },
   {
     "code": "FA4",
     "label": "Capped fast bowlers 4",
     "playerIds": [
-      "adam-milne",
-      "anrich-nortje",
-      "gerald-coetzee",
-      "jacob-duffy",
-      "kyle-jamieson",
-      "lockie-ferguson",
-      "lungi-ngidi",
-      "matt-henry"
+      "spencer-johnson",
+      "avesh-khan",
+      "khaleel-ahmed",
+      "eshan-malinga",
+      "matt-henry",
+      "nandre-burger",
+      "harshal-patel",
+      "kyle-jamieson"
     ]
   },
   {
     "code": "UAL4",
     "label": "Uncapped all-rounders 4",
     "playerIds": [
-      "suryansh-shedge",
+      "shivang-kumar",
       "tripurana-vijay"
     ]
   },
@@ -441,56 +442,61 @@
     "code": "UFA4",
     "label": "Uncapped fast bowlers 4",
     "playerIds": [
-      "saurabh-dubey",
-      "sushant-mishra"
+      "kulwant-khejroliya"
+    ]
+  },
+  {
+    "code": "BA5",
+    "label": "Capped batters 5",
+    "playerIds": [
+      "tristan-stubbs"
     ]
   },
   {
     "code": "AL5",
     "label": "Capped all-rounders 5",
     "playerIds": [
-      "brydon-carse",
-      "george-linde",
-      "corbin-bosch",
+      "shahbaz-ahmed",
+      "cooper-connolly",
       "kamindu-mendis",
-      "jayant-yadav"
+      "ramandeep-singh",
+      "jayant-yadav",
+      "ravindra-jadeja"
     ]
   },
   {
     "code": "FA5",
     "label": "Capped fast bowlers 5",
     "playerIds": [
-      "nathan-ellis",
-      "nuwan-thushara",
-      "david-payne",
-      "kwena-maphaka",
-      "spencer-johnson",
-      "eshan-malinga",
-      "xavier-bartlett",
-      "blessing-muzarabani"
+      "lockie-ferguson",
+      "anrich-nortje",
+      "mayank-yadav",
+      "mukesh-kumar",
+      "zak-foulkes",
+      "ishant-sharma",
+      "jaydev-unadkat",
+      "luke-wood"
     ]
   },
   {
     "code": "FA6",
     "label": "Capped fast bowlers 6",
     "playerIds": [
+      "umran-malik",
+      "tushar-deshpande",
+      "shivam-mavi",
+      "sandeep-sharma",
+      "kwena-maphaka",
       "dilshan-madushanka",
-      "dushmantha-chameera",
-      "luke-wood",
-      "zak-foulkes",
-      "akash-deep",
-      "jaydev-unadkat",
-      "ishant-sharma",
-      "kuldeep-sen"
+      "t-natarajan",
+      "akash-deep"
     ]
   },
   {
     "code": "FA7",
     "label": "Capped fast bowlers 7",
     "playerIds": [
-      "navdeep-saini",
-      "shivam-mavi",
-      "umran-malik"
+      "navdeep-saini"
     ]
   }
 ]

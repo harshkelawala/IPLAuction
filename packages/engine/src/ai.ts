@@ -1,4 +1,4 @@
-import type { Player } from '@ipl/data';
+import type { Player, PlayerTag } from '@ipl/data';
 import type { Lakh, Role, TeamId } from '@ipl/rules';
 import { SQUAD_TARGET, maxAffordableBid, squadTargets } from '@ipl/rules';
 import type { Auction } from './auction';
@@ -6,7 +6,7 @@ import type { Difficulty, Personality } from './types';
 
 /**
  * AI bidding (design doc, "AI team bidding"):
- *   max price = fair value × need × budget pressure × personality × noise,
+ *   max price = fair value × need × specialist need × budget pressure × personality × noise,
  *   capped by what the reserve rule lets the team spend.
  * An AI keeps bidding while the next bid is at or below its max price.
  */
@@ -47,6 +47,28 @@ export function needMultiplier(
   if (have < want) return 1 + 0.25 * ((want - have) / want);
   if (have < want + 2) return 0.6;
   return 0.3;
+}
+
+/**
+ * Specialist jobs a squad wants covered, from the Player Score's tags: two death bowlers, two
+ * powerplay bowlers, two openers and a finisher. A team still missing one pays more for a player
+ * who does that job, so two teams hunting death bowlers push each other's price up.
+ */
+export const SPECIALIST_TARGETS: Record<PlayerTag, { want: number; boost: number }> = {
+  death: { want: 2, boost: 0.2 },
+  powerplay: { want: 2, boost: 0.1 },
+  opener: { want: 2, boost: 0.15 },
+  finisher: { want: 1, boost: 0.15 },
+};
+
+export function specialistMultiplier(squadTags: PlayerTag[][], player: Pick<Player, 'tags'>): number {
+  let m = 1;
+  for (const tag of player.tags ?? []) {
+    const t = SPECIALIST_TARGETS[tag];
+    const have = squadTags.filter((tags) => tags.includes(tag)).length;
+    if (have < t.want) m += t.boost * ((t.want - have) / t.want);
+  }
+  return Math.min(m, 1.3);
 }
 
 export function personalityMultiplier(personality: Personality, player: Player, teamId: TeamId): number {
@@ -91,6 +113,12 @@ export function aiMaxPrice(auction: Auction, teamId: TeamId, playerId: string, o
   // 1. Need: chase empty roles, back off from full ones.
   const targets = squadTargets(settings.maxSquad);
   let need = needMultiplier(roleCounts(auction, teamId), player.role, targets);
+  // Specialist jobs (death bowling, powerplay, openers, a finisher) only matter once the role
+  // itself is still wanted.
+  if (need >= 1) {
+    const squadTags = team.squad.map((s) => auction.player(s.playerId).tags ?? []);
+    need *= specialistMultiplier(squadTags, player);
+  }
   if (opts.difficulty === 'easy') need = 1 + (need - 1) * 0.5;
 
   // 3. Personality and noise (computed first: they also stretch the budget cap).

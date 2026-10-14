@@ -2,7 +2,8 @@
  * Messages between the game server and the browser.
  * Kept free of server code so the web app can import it.
  *
- * The server never sends ratings or fair values: humans judge worth themselves.
+ * The server never sends ratings, fair values or the combined Player Score: humans judge worth
+ * themselves. It does send each player's form and record, as a real auction room would know them.
  */
 import type { BidCheck, Lakh, Role, TeamId } from '@ipl/rules';
 
@@ -24,6 +25,32 @@ export interface PublicPlayer {
   basePrice: Lakh;
   /** Real 2026 franchise, for flavour ("CSK 2026"). */
   lastTeam: TeamId;
+  /** Specialist jobs the data shows he does: opener, finisher, powerplay, death. */
+  tags: string[];
+  /** Form and record from every T20 match since 2021; null if he has none on record. */
+  stats: PlayerStats | null;
+}
+
+/** 50 = an average IPL performance; one standard deviation of a single match is 15. */
+export interface PlayerStats {
+  /** Last few matches. */
+  form: number;
+  /** Whole record since 2021. */
+  class: number;
+  /** Best recent season and big-match record: the proven match-winner part. */
+  importance: number;
+  batting: number;
+  bowling: number;
+  /** 0–1: how much cricket this rests on (12 full matches = 1). */
+  confidence: number;
+  /** Form change over the last 5 matches. */
+  trend: number;
+  matches: number;
+  competitions: Record<string, number>;
+  lastMatch: string | null;
+  /** Form-and-class level after each of the last 15 matches, oldest first. */
+  timeline: number[];
+  recent: { date: string; comp: string; against: string; match: number | null }[];
 }
 
 export interface SoloSettings {

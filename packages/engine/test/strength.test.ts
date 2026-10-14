@@ -8,7 +8,7 @@ function p(role: Player['role'], rating: number, overseas = false): Player {
   return {
     id: `p${n}`, name: `Player ${n}`, country: overseas ? 'Australia' : 'India', isOverseas: overseas, isCapped: true,
     role, battingHand: 'R', bowlingStyle: role === 'BOWL' || role === 'AR' ? 'RFM' : null,
-    category: 'BA', rating, ratingSource: 'price', fairValue: 100, basePrice: 30, lastTeam: 'CSK',
+    category: 'BA', rating, battingRating: rating, bowlingRating: rating, ratingSource: 'price', tags: [], score: null, fairValue: 100, basePrice: 30, lastTeam: 'CSK',
     contractPrice: 100, acquired: 'auction', withdrawn: false,
   };
 }
@@ -65,7 +65,7 @@ describe('attack mix and value', () => {
 describe('team strength', () => {
   it('scores a better squad higher', () => {
     const strong = teamStrength(balanced(), { minSquad: 11 });
-    const weak = teamStrength(balanced().map((x) => ({ ...x, rating: x.rating - 15 })), { minSquad: 11 });
+    const weak = teamStrength(balanced().map((x) => ({ ...x, rating: x.rating - 15, battingRating: x.rating - 15, bowlingRating: x.rating - 15 })), { minSquad: 11 });
     expect(strong.overall).toBeGreaterThan(weak.overall);
     // The fixture's bowlers are all pace, so the only issue is the missing spinner.
     expect(strong.issues).toEqual(['No spinner in the XI']);
@@ -86,6 +86,6 @@ describe('team strength', () => {
   });
 
   it('grades on the calibrated scale', () => {
-    expect([grade(94), grade(92), grade(90), grade(88), grade(86), grade(80)]).toEqual(['A+', 'A', 'B+', 'B', 'C', 'D']);
+    expect([grade(92), grade(91), grade(89), grade(87), grade(86), grade(80)]).toEqual(['A+', 'A', 'B+', 'B', 'C', 'D']);
   });
 });

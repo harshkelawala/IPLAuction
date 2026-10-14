@@ -5,7 +5,8 @@
  *
  * Inputs  (packages/data/raw):
  *   squads-2026.csv          real squads: team, role, nationality, contract price
- *   ratings-cricsheet.csv    optional, written by scripts/ratings/compute_ratings.py
+ *   ../generated/player-score.json  the central Player Score (scripts/ratings/player_score.py)
+ *   ratings-cricsheet.csv    optional older stats ratings, used only without a Player Score
  *   rating-overrides.csv     optional, hand corrections (id,rating,reason)
  * Outputs (packages/data/generated):
  *   players-2026.json        every player with rating, fair value, base price, category
@@ -17,6 +18,7 @@ import { fileURLToPath } from 'node:url';
 import { formatLakh } from '@ipl/rules';
 import { parseCsv } from './csv';
 import { buildPlayers } from './players';
+import type { RawScore } from './score';
 import { buildSets } from './sets';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -33,8 +35,15 @@ function readRatings(file: string): Map<string, number> | undefined {
   return map;
 }
 
+function readScores(file: string): Map<string, RawScore> | undefined {
+  if (!existsSync(file)) return undefined;
+  const json = JSON.parse(readFileSync(file, 'utf8')) as { players: Record<string, RawScore> };
+  return new Map(Object.entries(json.players));
+}
+
 const rows = parseCsv(readFileSync(raw('squads-2026.csv'), 'utf8'));
 const players = buildPlayers(rows, {
+  scores: readScores(out('player-score.json')),
   cricsheet: readRatings(raw('ratings-cricsheet.csv')),
   overrides: readRatings(raw('rating-overrides.csv')),
 });
