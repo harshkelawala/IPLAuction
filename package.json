@@ -18,7 +18,8 @@
     "server": "npm run dev -w @ipl/server",
     "dev": "concurrently -k -n server,web -c blue,yellow \"npm run dev -w @ipl/server\" \"npm run dev -w @ipl/web\"",
     "web": "npm run dev -w @ipl/web",
-    "build": "npm run build -w @ipl/web"
+    "build": "npm run build -w @ipl/web",
+    "data:fetch": "node packages/data/scripts/fetch-cricsheet.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
