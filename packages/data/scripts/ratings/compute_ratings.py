@@ -11,7 +11,7 @@ Usage (from this folder, needs internet access to cricsheet.org):
     python3 compute_ratings.py --data-dir path/to/json # compute from any folder of match JSON files
 
 Method (see the design doc, "How ratings are computed"):
-  1. T20 matches from the last 3 seasons, weighted 1.0 / 0.6 / 0.3 by season,
+  1. T20 matches from the last 3 seasons, weighted 1.0 / 0.5 / 0.2 by season,
      and by competition (IPL and T20Is 1.0, big leagues 0.85, domestic 0.7).
   2. Weighted totals per player -> strike rate, average, runs; economy, wickets/match,
      death-overs economy.
@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import difflib
 import io
 import json
 import re
@@ -53,7 +54,7 @@ COMPETITIONS = {
     "sat_json.zip": 0.85,
     "sma_json.zip": 0.7,  # Syed Mushtaq Ali Trophy: covers uncapped Indians
 }
-SEASON_WEIGHTS = [1.0, 0.6, 0.3]  # latest season first
+SEASON_WEIGHTS = [1.0, 0.5, 0.2]  # latest season first: current form matters most
 SHRINK_BAT_BALLS = 100
 SHRINK_BOWL_BALLS = 120
 MIN_BAT_BALLS = 60
@@ -92,6 +93,8 @@ class PlayerData:
     # season -> competition weight -> raw totals; aggregated with weights later
     by_season: dict[int, Totals] = field(default_factory=lambda: defaultdict(Totals))
     ipl_matches: int = 0
+    # season -> franchise names played for (used to tell apart players with similar names)
+    teams: dict[int, set] = field(default_factory=lambda: defaultdict(set))
 
 
 # ---------------------------------------------------------------- loading
@@ -126,6 +129,54 @@ def iter_matches(cache: Path | None, data_dir: Path | None):
                     yield weight, name == "ipl_json.zip", json.loads(z.read(member))
 
 
+def iter_ipl_csv(folder: Path):
+    """
+    Yield (1.0, True, match_json) from an IPL ball-by-ball CSV mirror of Cricsheet
+    (Match_Info.csv + Ball_By_Ball_Match_Data.csv, e.g. github.com/ritesh-ojha/IPL-DATASET),
+    converted to the Cricsheet JSON shape that collect() reads.
+    """
+    info: dict[str, dict] = {}
+    with open(folder / "Match_Info.csv", newline="") as f:
+        for r in csv.DictReader(f):
+            info[r["match_number"]] = {
+                "match_type": "T20",
+                "season": r["match_date"][:4],
+                "dates": [r["match_date"]],
+                "players": {
+                    r["team1"]: [x.strip() for x in r["team1_players"].split(",") if x.strip()],
+                    r["team2"]: [x.strip() for x in r["team2_players"].split(",") if x.strip()],
+                },
+            }
+    innings: dict[str, dict[int, dict[int, list]]] = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+    with open(folder / "Ball_By_Ball_Match_Data.csv", newline="") as f:
+        for r in csv.DictReader(f):
+            extras: dict[str, int] = {}
+            kind = (r["ExtraType"] or "").strip()
+            extra_runs = int(r["ExtrasRun"] or 0)
+            if kind in ("wides", "noballs", "legbyes", "byes", "penalty") and extra_runs:
+                extras[kind] = extra_runs
+            elif kind in ("wides", "noballs"):
+                extras[kind] = 1
+            d = {
+                "batter": r["Batter"],
+                "bowler": r["Bowler"],
+                "runs": {"batter": int(r["BatsmanRun"] or 0), "extras": extra_runs, "total": int(r["TotalRun"] or 0)},
+            }
+            if extras:
+                d["extras"] = extras
+            if r["IsWicketDelivery"] == "1" and r["PlayerOut"] not in ("", "NA"):
+                d["wickets"] = [{"player_out": r["PlayerOut"], "kind": r["Kind"]}]
+            innings[r["ID"]][int(r["Innings"])][int(r["Overs"])].append(d)
+    for match_id, inns in innings.items():
+        if match_id not in info:
+            continue
+        m = {"info": info[match_id], "innings": []}
+        for number in sorted(inns):
+            overs = [{"over": o, "deliveries": ds} for o, ds in sorted(inns[number].items())]
+            m["innings"].append({"overs": overs, "super_over": number > 2})
+        yield 1.0, True, m
+
+
 def season_of(match: dict) -> int:
     season = str(match["info"].get("season", ""))
     m = re.match(r"(\d{4})", season)
@@ -145,7 +196,11 @@ def collect(matches, seasons: list[int]) -> dict[str, PlayerData]:
         if season not in wanted:
             continue
         per_match: dict[str, Totals] = defaultdict(Totals)
-        players = {p for team in m["info"].get("players", {}).values() for p in team}
+        team_players = m["info"].get("players", {})
+        players = {p for team in team_players.values() for p in team}
+        for team_name, names in team_players.items():
+            for name in names:
+                data[name].teams[season].add(team_name)
         for innings in m.get("innings", []):
             if innings.get("super_over"):
                 continue
@@ -201,33 +256,117 @@ def load_name_map() -> dict[str, str]:
         return {r["id"]: r["cricsheet_name"] for r in csv.DictReader(line for line in f if not line.startswith("#"))}
 
 
+FRANCHISE_NAMES = {
+    "CSK": {"Chennai Super Kings"},
+    "MI": {"Mumbai Indians"},
+    "RCB": {"Royal Challengers Bangalore", "Royal Challengers Bengaluru"},
+    "KKR": {"Kolkata Knight Riders"},
+    "SRH": {"Sunrisers Hyderabad"},
+    "RR": {"Rajasthan Royals"},
+    "DC": {"Delhi Capitals", "Delhi Daredevils"},
+    "PBKS": {"Punjab Kings", "Kings XI Punjab"},
+    "LSG": {"Lucknow Super Giants"},
+    "GT": {"Gujarat Titans"},
+}
+
+
+def _tokens(name: str) -> list[str]:
+    return [t for t in re.split(r"[\s.]+", name) if t]
+
+
+def _first_ok(cs_first: str, squad_first: str) -> bool:
+    """
+    Cricsheet's first token is either initials ("RG", "PVD") or a name ("Shubman").
+    Initials match if they contain the first initial (Sri Lankan names often put the
+    given-name initial last: Dushmantha Chameera = "PVD Chameera"); names match on
+    spelling variants ("Abishek" / "Abhishek").
+    """
+    if cs_first.isupper() and len(cs_first) <= 4:
+        return squad_first[0].lower() in cs_first.lower()
+    a, b = cs_first.lower(), squad_first.lower()
+    return a == b or difflib.SequenceMatcher(None, a, b).ratio() >= 0.8
+
+
 def match_names(squad: list[dict], data: dict[str, PlayerData]) -> dict[str, str]:
     """
     Squad full names ("Virat Kohli") -> Cricsheet display names ("V Kohli").
-    Rule: same surname and same first initial; if several, the one with most weighted matches.
+    1. A manual entry in raw/cricsheet-names.csv.
+    2. The exact name.
+    3. Same surname and a compatible first name or initial; ties go to whoever played for the
+       player's franchise (latest season first), then to the most matches.
+    4. Otherwise someone who played for that franchise and shares a 4+ letter name token
+       ("Varun Chakravarthy" -> "CV Varun"), if exactly one does.
     """
     manual = load_name_map()
     by_surname: dict[str, list[str]] = defaultdict(list)
     for cs in data:
-        parts = cs.split()
-        by_surname[parts[-1].lower()].append(cs)
+        toks = _tokens(cs)
+        if toks:
+            by_surname[toks[-1].lower()].append(cs)
+    seasons_desc = sorted({s for pd in data.values() for s in pd.teams}, reverse=True)
 
     def volume(cs: str) -> float:
         return sum(t.matches for t in data[cs].by_season.values())
 
+    def played_for(cs: str, team: str) -> int:
+        """Most recent season index (0 = latest) the player turned out for this franchise, else 99."""
+        names = FRANCHISE_NAMES.get(team, set())
+        for i, season in enumerate(seasons_desc):
+            if data[cs].teams.get(season, set()) & names:
+                return i
+        return 99
+
+    def first_name_hit(cs: str, first: str) -> bool:
+        """The Cricsheet name spells out the player's first name anywhere ("M Shahrukh Khan")."""
+        return any(t.lower() == first.lower() for t in _tokens(cs)[:-1])
+
+    # Pass 1: manual entries and exact names are certain; reserve them first.
     out: dict[str, str] = {}
+    taken: set[str] = set()
     for r in squad:
         if r["id"] in manual:
             out[r["id"]] = manual[r["id"]]
-            continue
-        if r["name"] in data:
+        elif r["name"] in data:
             out[r["id"]] = r["name"]
+        if r["id"] in out:
+            taken.add(out[r["id"]])
+
+    # Pass 2: everyone else, best candidate first; one Cricsheet name per squad player.
+    guesses: list[tuple[tuple, str, str]] = []
+    for r in squad:
+        if r["id"] in out:
             continue
-        parts = r["name"].replace(".", " ").split()
-        surname, initial = parts[-1].lower(), parts[0][0].upper()
-        cands = [c for c in by_surname.get(surname, []) if c.split()[0][0].upper() == initial]
-        if cands:
-            out[r["id"]] = max(cands, key=volume)
+        toks = _tokens(r["name"])
+        if not toks:
+            continue
+        surname, first = toks[-1].lower(), toks[0]
+        team = r.get("team", "")
+        cands = [
+            c for c in by_surname.get(surname, [])
+            if c not in taken and (first_name_hit(c, first) or _first_ok(_tokens(c)[0], first))
+        ]
+        if not cands:
+            # Same franchise this season and a shared 4+ letter name other than the surname
+            # ("Varun Chakravarthy" -> "CV Varun").
+            given = {t.lower() for t in toks[:-1] if len(t) >= 4}
+            cands = [
+                c for c in data
+                if c not in taken and played_for(c, team) == 0
+                and given & {t.lower() for t in _tokens(c) if len(t) >= 4}
+            ]
+            if len(cands) != 1:
+                continue
+        for c in cands:
+            # Lower sorts first: spelled-out first name, then played for this franchise recently, then most matches.
+            lead = _tokens(c)[0]
+            exact_initial = lead[0].lower() == first[0].lower()
+            key = (0 if first_name_hit(c, first) else 1 if exact_initial else 2, played_for(c, team), -volume(c))
+            guesses.append((key, r["id"], c))
+    for _, rid, c in sorted(guesses):
+        if rid in out or c in taken:
+            continue
+        out[rid] = c
+        taken.add(c)
     return out
 
 
@@ -349,9 +488,11 @@ def compute(squad: list[dict], data: dict[str, PlayerData], seasons: list[int]) 
         form = skill_for(roles[i], bat_now.get(i), bowl_now.get(i))
         form = skill if form is None else form
         experience = min(100.0, float(data[cs].ipl_matches))
-        rating = 0.70 * skill + 0.15 * form + 0.10 * experience + 0.05 * age_factor(ages.get(i))
+        # Current form counts heavily so breakout seasons show; experience barely, so newcomers aren't held back.
+        rating = 0.60 * skill + 0.30 * form + 0.05 * experience + 0.05 * age_factor(ages.get(i))
         rows.append({
             "id": i,
+            "cricsheet_name": cs,
             "rating": round(rating),
             "balls_bat": round(full[i].balls),
             "balls_bowl": round(full[i].bowl_balls),
@@ -364,6 +505,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--download", action="store_true", help="download Cricsheet zips into ./cache first")
     ap.add_argument("--data-dir", type=Path, help="folder of Cricsheet match JSON files instead of the zips")
+    ap.add_argument("--ipl-csv", type=Path, help="folder with Match_Info.csv + Ball_By_Ball_Match_Data.csv (IPL only)")
     ap.add_argument("--latest-season", type=int, default=2026, help="most recent season to include")
     ap.add_argument("--out", type=Path, default=RAW / "ratings-cricsheet.csv")
     args = ap.parse_args()
@@ -371,10 +513,13 @@ def main() -> None:
     if args.download:
         download(CACHE)
     seasons = [args.latest_season - k for k in range(len(SEASON_WEIGHTS))]
-    data = collect(iter_matches(None if args.data_dir else CACHE, args.data_dir), seasons)
+    if args.ipl_csv:
+        data = collect(iter_ipl_csv(args.ipl_csv), seasons)
+    else:
+        data = collect(iter_matches(None if args.data_dir else CACHE, args.data_dir), seasons)
     rows = compute(load_squads(), data, seasons)
     with open(args.out, "w", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=["id", "rating", "balls_bat", "balls_bowl", "matches"])
+        w = csv.DictWriter(f, fieldnames=["id", "cricsheet_name", "rating", "balls_bat", "balls_bowl", "matches"])
         w.writeheader()
         w.writerows(rows)
     print(f"wrote {len(rows)} ratings to {args.out} (seasons {seasons})")

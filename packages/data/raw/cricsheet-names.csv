@@ -1,0 +1,4 @@
+# Squad players whose Cricsheet name the matcher can't work out on its own.
+# id is the squad player's slug; cricsheet_name is exactly as Cricsheet spells it.
+id,cricsheet_name
+vaibhav-sooryavanshi,V Suryavanshi

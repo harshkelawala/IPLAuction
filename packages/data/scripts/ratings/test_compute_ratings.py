@@ -46,11 +46,11 @@ class RatingTests(unittest.TestCase):
     def setUp(self):
         self.data = build_dataset()
         self.squad = [
-            {"id": "virat-kohli", "name": "Virat Kohli", "role": "BAT"},
-            {"id": "rohit-sharma", "name": "Rohit Sharma", "role": "BAT"},
-            {"id": "jasprit-bumrah", "name": "Jasprit Bumrah", "role": "BOWL"},
-            {"id": "mohammed-siraj", "name": "Mohammed Siraj", "role": "BOWL"},
-            {"id": "nobody-here", "name": "Nobody Here", "role": "BAT"},
+            {"id": "virat-kohli", "name": "Virat Kohli", "role": "BAT", "team": "RCB"},
+            {"id": "rohit-sharma", "name": "Rohit Sharma", "role": "BAT", "team": "MI"},
+            {"id": "jasprit-bumrah", "name": "Jasprit Bumrah", "role": "BOWL", "team": "MI"},
+            {"id": "mohammed-siraj", "name": "Mohammed Siraj", "role": "BOWL", "team": "GT"},
+            {"id": "nobody-here", "name": "Nobody Here", "role": "BAT", "team": "CSK"},
         ]
 
     def test_counts_runs_balls_and_wickets(self):
@@ -73,6 +73,25 @@ class RatingTests(unittest.TestCase):
         self.assertGreater(rows["jasprit-bumrah"], rows["mohammed-siraj"])
         for r in rows.values():
             self.assertTrue(0 <= r <= 100)
+
+    def test_one_cricsheet_name_per_player_and_surname_alone_is_not_enough(self):
+        data = {n: cr.PlayerData() for n in ["SN Khan", "M Shahrukh Khan", "Kuldeep Yadav"]}
+        for n in data:
+            data[n].by_season[SEASON].matches = 10
+        data["SN Khan"].teams[SEASON].add("Chennai Super Kings")
+        squad = [
+            {"id": "sarfaraz-khan", "name": "Sarfaraz Khan", "role": "BAT", "team": "CSK"},
+            {"id": "aman-hakim-khan", "name": "Aman Hakim Khan", "role": "AR", "team": "CSK"},
+            {"id": "shahrukh-khan", "name": "Shahrukh Khan", "role": "BAT", "team": "GT"},
+            {"id": "kuldeep-yadav", "name": "Kuldeep Yadav", "role": "BOWL", "team": "DC"},
+            {"id": "kuldip-yadav", "name": "Kuldip Yadav", "role": "BOWL", "team": "CSK"},
+        ]
+        names = cr.match_names(squad, data)
+        self.assertEqual(names["sarfaraz-khan"], "SN Khan")
+        self.assertEqual(names["shahrukh-khan"], "M Shahrukh Khan")
+        self.assertNotIn("aman-hakim-khan", names)
+        self.assertEqual(names["kuldeep-yadav"], "Kuldeep Yadav")
+        self.assertNotIn("kuldip-yadav", names)
 
     def test_shrinkage_pulls_small_samples_to_prior(self):
         self.assertAlmostEqual(cr.shrink(250, 20, 140, 100), (20 * 250 + 100 * 140) / 120)
