@@ -108,11 +108,16 @@ export function useRoom(roomId: string) {
     return res.ok ? { ok: true as const } : { ok: false as const, message: res.error };
   }, []);
 
+  const setWatch = useCallback(
+    (playerIds: string[], autoSkip: boolean) => void getSocket().emitWithAck('watch:set', { playerIds, autoSkip }),
+    [],
+  );
+
   const pause = useCallback(() => void getSocket().emitWithAck('room:pause'), []);
   const resume = useCallback(() => void getSocket().emitWithAck('room:resume'), []);
   const clearFlash = useCallback(() => setState((s) => ({ ...s, flash: null })), []);
 
-  return { ...state, bid, skip, pause, resume, clearFlash };
+  return { ...state, bid, skip, setWatch, pause, resume, clearFlash };
 }
 
 /** Re-render every animation frame while `active`; returns Date.now(). */

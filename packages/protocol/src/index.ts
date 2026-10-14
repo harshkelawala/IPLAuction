@@ -33,6 +33,19 @@ export interface SoloSettings {
   pool: PoolPreset;
 }
 
+export interface StrengthView {
+  /** 0–100, best legal XI: 45% batting, 45% bowling, 10% bench. */
+  overall: number;
+  batting: number;
+  bowling: number;
+  grade: string;
+  /** 1 = strongest squad right now. */
+  rank: number;
+  /** Best legal XI (at most 4 overseas). */
+  xi: string[];
+  issues: string[];
+}
+
 export interface TeamView {
   id: TeamId;
   controller: 'human' | 'ai';
@@ -40,6 +53,7 @@ export interface TeamView {
   purse: Lakh;
   squad: { playerId: string; price: Lakh }[];
   overseasCount: number;
+  strength: StrengthView;
 }
 
 export interface LotView {
@@ -74,6 +88,8 @@ export interface RoomSnapshot {
     minSquad: number;
     maxSquad: number;
     maxOverseas: number;
+    /** Indians a squad needs to field an XI with at most 4 overseas. */
+    minIndians: number;
     difficulty: Difficulty;
     speed: Speed;
     pool: PoolPreset;
@@ -87,6 +103,10 @@ export interface RoomSnapshot {
   unsold: string[];
   /** Players still to come in this round, in the order they will come up. */
   upcoming: string[];
+  /** Players you starred. */
+  watchlist: string[];
+  /** Skip every player you haven't starred. */
+  autoSkip: boolean;
 }
 
 export interface SetView {
@@ -110,6 +130,8 @@ export interface ClientToServer {
   'bid:place': (req: { amount: Lakh }, ack: Ack<BidCheck>) => void;
   /** Sit out the current player: AI teams settle it instantly and the next player comes up. */
   'lot:skip': (ack: Ack<null>) => void;
+  /** Replace your watchlist and auto-skip setting. */
+  'watch:set': (req: { playerIds: string[]; autoSkip: boolean }, ack: Ack<null>) => void;
   'room:pause': (ack: Ack<null>) => void;
   'room:resume': (ack: Ack<null>) => void;
 }

@@ -137,6 +137,31 @@ describe('game server', () => {
     expect(after?.log[0]?.kind === 'sold' || after?.log[0]?.kind === 'unsold').toBe(true);
   });
 
+  it('auto-skips players you have not starred and stops on a starred one', async () => {
+    const c = client();
+    const first = waitFor(c, (s) => s.lot !== null);
+    await createAndJoin(c);
+    const s = await first;
+    // Star the 10th player to come up, then turn on auto-skip.
+    const target = s.upcoming[8] as string;
+    await c.emitWithAck('room:pause');
+    await c.emitWithAck('watch:set', { playerIds: [target], autoSkip: true });
+    await c.emitWithAck('room:resume');
+    const reached = await waitFor(c, (x) => x.lot?.playerId === target, 10_000);
+    expect(reached.autoSkip).toBe(true);
+    expect(reached.watchlist).toEqual([target]);
+    expect(reached.progress.done).toBe(9);
+  });
+
+  it('sends a strength rating and rank for every team', async () => {
+    const c = client();
+    const first = waitFor(c, (s) => s.lot !== null);
+    await createAndJoin(c);
+    const s = await first;
+    expect(s.teams.map((t) => t.strength.rank).sort((a, b) => a - b)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(typeof s.teams[0]?.strength.grade).toBe('string');
+  });
+
   it('pauses and resumes', async () => {
     const c = client();
     const first = waitFor(c, (s) => s.lot !== null);

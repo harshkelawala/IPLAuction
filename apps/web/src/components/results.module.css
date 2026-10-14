@@ -199,3 +199,85 @@
 .teamCard[open] .roles {
   margin-top: 10px;
 }
+
+.note {
+  margin: -4px 0 12px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.ranking {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.ranking th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--muted);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.ranking td {
+  padding: 10px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+.ranking tr[data-you='true'] td {
+  background: rgba(227, 178, 60, 0.1);
+}
+
+.ranking .numCol {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.ranking td:first-child {
+  font-family: var(--display);
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.teamCell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.issue {
+  display: block;
+  font-size: 0.8rem;
+  color: #ffb4b4;
+}
+
+.grade {
+  display: inline-grid;
+  place-items: center;
+  min-width: 34px;
+  padding: 2px 8px;
+  border-radius: var(--radius-small);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--display);
+  font-weight: 700;
+}
+
+.xiLine {
+  margin: 0 0 12px;
+  color: var(--muted-ink);
+}
+
+.xiLine strong {
+  color: var(--ink);
+}

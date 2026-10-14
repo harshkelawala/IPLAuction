@@ -2,12 +2,15 @@ import { randomUUID } from 'node:crypto';
 import type { Player } from '@ipl/data';
 import { buildSets, mulberry32 } from '@ipl/data';
 import type { AiOptions, AuctionEvent, TeamController } from '@ipl/engine';
-import { Auction, aiBidDelay, aiWantsToBid, assignPersonalities, poolSetup } from '@ipl/engine';
+import { Auction, aiBidDelay, aiWantsToBid, assignPersonalities, grade, poolSetup, teamStrength } from '@ipl/engine';
 import type { LogEntry, PublicPlayer, RoomSnapshot, ServerToClient, SetView, SoloSettings, Welcome } from '@ipl/protocol';
 import type { AuctionSettings, BidCheck, Lakh, TeamId } from '@ipl/rules';
 import { MEGA_DEFAULTS, TEAM_IDS } from '@ipl/rules';
 
 type LogEntryInput = LogEntry extends infer E ? (E extends LogEntry ? Omit<E, "id"> : never) : never;
+
+/** How long an unstarred player stays on screen before auto-skip settles him (ms). */
+const AUTO_SKIP_MS = 700;
 
 const TIMERS = {
   normal: { opening: 15_000, bid: 10_000, accelerated: 6_000 },
@@ -46,6 +49,9 @@ export class Room {
   private readonly sets: SetView[];
   private closeTimer: NodeJS.Timeout | null = null;
   private aiTimer: NodeJS.Timeout | null = null;
+  private autoSkipTimer: NodeJS.Timeout | null = null;
+  private watchlist = new Set<string>();
+  private autoSkip = false;
   private paused = false;
   private pausedRemainingMs: number | null = null;
   private log: LogEntry[] = [];
@@ -140,6 +146,15 @@ export class Room {
     return { ok: true };
   }
 
+  /** Replace the watchlist and auto-skip setting, then re-plan the current player. */
+  setWatch(playerIds: string[], autoSkip: boolean): void {
+    this.lastActivity = this.now();
+    this.watchlist = new Set(playerIds.filter((id) => this.auction.players.has(id)));
+    this.autoSkip = autoSkip;
+    this.broadcast();
+    this.schedule();
+  }
+
   pause(): void {
     const lot = this.auction.currentLot;
     if (this.paused || !lot) return;
@@ -181,22 +196,13 @@ export class Room {
         minSquad: this.settings.minSquad,
         maxSquad: this.settings.maxSquad,
         maxOverseas: this.settings.maxOverseas,
+        minIndians: this.settings.minIndians,
         difficulty: this.solo.difficulty,
         speed: this.solo.speed,
         pool: this.solo.pool,
         bidTimerMs: this.settings.bidTimerMs,
       },
-      teams: TEAM_IDS.map((id) => {
-        const t = a.team(id);
-        return {
-          id,
-          controller: t.controller.kind,
-          isYou: id === this.human,
-          purse: t.purse,
-          squad: t.squad.map((s) => ({ playerId: s.playerId, price: s.price })),
-          overseasCount: t.overseasCount,
-        };
-      }),
+      teams: this.teamViews(),
       lot:
         lot && nextBid !== null
           ? {
@@ -215,7 +221,39 @@ export class Room {
       progress: a.lotCounts,
       unsold: [...a.unsoldPlayers],
       upcoming: a.upcoming.map((q) => q.playerId),
+      watchlist: [...this.watchlist],
+      autoSkip: this.autoSkip,
     };
+  }
+
+  private teamViews(): RoomSnapshot['teams'] {
+    const a = this.auction;
+    const rows = TEAM_IDS.map((id) => {
+      const t = a.team(id);
+      const strength = teamStrength(
+        t.squad.map((s) => a.player(s.playerId)),
+        this.settings,
+      );
+      return { id, t, strength };
+    });
+    const ranked = [...rows].sort((x, y) => y.strength.overall - x.strength.overall);
+    return rows.map(({ id, t, strength }) => ({
+      id,
+      controller: t.controller.kind,
+      isYou: id === this.human,
+      purse: t.purse,
+      squad: t.squad.map((s) => ({ playerId: s.playerId, price: s.price })),
+      overseasCount: t.overseasCount,
+      strength: {
+        overall: strength.overall,
+        batting: strength.batting,
+        bowling: strength.bowling,
+        grade: grade(strength.overall),
+        rank: ranked.findIndex((r) => r.id === id) + 1,
+        xi: strength.xi,
+        issues: strength.issues,
+      },
+    }));
   }
 
   // ------------------------------------------------------------------ internals
@@ -256,8 +294,10 @@ export class Room {
   private clearTimers(): void {
     if (this.closeTimer) clearTimeout(this.closeTimer);
     if (this.aiTimer) clearTimeout(this.aiTimer);
+    if (this.autoSkipTimer) clearTimeout(this.autoSkipTimer);
     this.closeTimer = null;
     this.aiTimer = null;
+    this.autoSkipTimer = null;
   }
 
   /** Arm the hammer for the current lot and, if any AI wants the player, its next bid. */
@@ -268,6 +308,15 @@ export class Room {
     const now = this.now();
 
     this.closeTimer = setTimeout(() => this.handle(this.auction.tick(this.now())), Math.max(0, lot.endsAt - now));
+
+    // Auto-skip: give the player a moment on screen, then settle him without you.
+    if (this.autoSkip && !this.watchlist.has(lot.playerId) && lot.leader !== this.human) {
+      const playerId = lot.playerId;
+      this.autoSkipTimer = setTimeout(() => {
+        if (this.auction.currentLot?.playerId === playerId && !this.paused) this.skip();
+      }, Math.round(AUTO_SKIP_MS * this.scale));
+      return;
+    }
 
     const keen = TEAM_IDS.filter((id) => id !== this.human && aiWantsToBid(this.auction, id, this.ai));
     if (keen.length === 0) return;

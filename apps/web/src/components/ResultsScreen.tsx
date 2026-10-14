@@ -10,6 +10,9 @@ import styles from './results.module.css';
 
 const ROLES: Role[] = ['BAT', 'WK', 'AR', 'BOWL'];
 
+const ordinal = (n: number) =>
+  `${n}${n % 10 === 1 && n !== 11 ? 'st' : n % 10 === 2 && n !== 12 ? 'nd' : n % 10 === 3 && n !== 13 ? 'rd' : 'th'}`;
+
 function SquadList({ team, players }: { team: TeamView; players: Map<string, PublicPlayer> }) {
   return (
     <div className={styles.roles}>
@@ -48,13 +51,15 @@ export function ResultsScreen({ snapshot, players }: { snapshot: RoomSnapshot; p
     .flatMap((t) => t.squad.map((s) => ({ team: t.id, ...s })))
     .sort((a, b) => b.price - a.price);
   const yourShort = settings.minSquad - you.squad.length;
+  const ranked = [...snapshot.teams].sort((a, b) => a.strength.rank - b.strength.rank);
 
   return (
     <main className={styles.page}>
       <header className={styles.header}>
-        <h1>The hammer has fallen</h1>
+        <h1>{you.strength.rank === 1 ? 'You built the strongest squad' : `You finished ${ordinal(you.strength.rank)} of 10`}</h1>
         <p>
-          {sales.length} players sold. {snapshot.unsold.length} went unsold.
+          {teamById(you.id).name}: {you.strength.grade}, strength {you.strength.overall.toFixed(1)}. {sales.length} players sold,{' '}
+          {snapshot.unsold.length} unsold.
         </p>
         <Link href="/" className={styles.again}>
           Play another auction
@@ -78,11 +83,60 @@ export function ResultsScreen({ snapshot, players }: { snapshot: RoomSnapshot; p
             )}
           </div>
         </div>
+        {you.strength.xi.length > 0 && (
+          <p className={styles.xiLine}>
+            <strong>Best XI:</strong> {you.strength.xi.map((id) => players.get(id)?.name).join(', ')}
+          </p>
+        )}
         {you.squad.length > 0 ? (
           <SquadList team={you} players={players} />
         ) : (
           <p>You didn't sign anyone this time.</p>
         )}
+      </section>
+
+      <section aria-labelledby="ranking" className={styles.section}>
+        <h2 id="ranking">Final ranking</h2>
+        <p className={styles.note}>
+          Strength of each team's best legal XI (at most 4 overseas): 45% batting, 45% bowling, 10% bench.
+        </p>
+        <div className={styles.tableWrap}>
+          <table className={styles.ranking}>
+            <thead>
+              <tr>
+                <th scope="col">Rank</th>
+                <th scope="col">Team</th>
+                <th scope="col">Grade</th>
+                <th scope="col" className={styles.numCol}>Strength</th>
+                <th scope="col" className={styles.numCol}>Batting</th>
+                <th scope="col" className={styles.numCol}>Bowling</th>
+                <th scope="col" className={styles.numCol}>Spent</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ranked.map((t) => (
+                <tr key={t.id} data-you={t.isYou}>
+                  <td className="num">{t.strength.rank}</td>
+                  <td>
+                    <span className={styles.teamCell}>
+                      <TeamBadge id={t.id} size={22} />
+                      {teamById(t.id).name}
+                      {t.isYou && <span className={styles.youTag}>You</span>}
+                    </span>
+                    {t.strength.issues.length > 0 && <span className={styles.issue}>{t.strength.issues.join('. ')}</span>}
+                  </td>
+                  <td>
+                    <span className={styles.grade}>{t.strength.grade}</span>
+                  </td>
+                  <td className={`num ${styles.numCol}`}>{t.strength.overall.toFixed(1)}</td>
+                  <td className={`num ${styles.numCol}`}>{t.strength.batting.toFixed(0)}</td>
+                  <td className={`num ${styles.numCol}`}>{t.strength.bowling.toFixed(0)}</td>
+                  <td className={`num ${styles.numCol}`}>{formatLakh(spent(t))}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section aria-labelledby="top-buys" className={styles.section}>
@@ -112,7 +166,8 @@ export function ResultsScreen({ snapshot, players }: { snapshot: RoomSnapshot; p
                     {t.isYou && <span className={styles.youTag}>You</span>}
                   </span>
                   <span className={styles.cardMeta}>
-                    {t.squad.length} players, spent <span className="num">{formatLakh(spent(t))}</span>
+                    #{t.strength.rank}, {t.strength.grade}. {t.squad.length} players, spent{' '}
+                    <span className="num">{formatLakh(spent(t))}</span>
                     {top && (
                       <>
                         . Top buy {players.get(top.playerId)?.name} at <span className="num">{formatLakh(top.price)}</span>

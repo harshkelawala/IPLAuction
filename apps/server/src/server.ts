@@ -98,6 +98,14 @@ export function createGameServer(http: HttpServer, opts: GameServerOptions = {})
       ack(res.ok ? { ok: true, data: null } : { ok: false, error: res.message });
     });
 
+    socket.on('watch:set', ({ playerIds, autoSkip }, ack) => {
+      const room = roomOf();
+      if (!room) return ack({ ok: false, error: 'Join an auction first' });
+      if (!Array.isArray(playerIds)) return ack({ ok: false, error: 'Send a list of players' });
+      room.setWatch(playerIds.map(String).slice(0, 500), Boolean(autoSkip));
+      ack({ ok: true, data: null });
+    });
+
     socket.on('room:pause', (ack) => {
       const room = roomOf();
       if (!room) return ack({ ok: false, error: 'Join an auction first' });

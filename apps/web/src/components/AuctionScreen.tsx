@@ -22,6 +22,15 @@ export function AuctionScreen({ room }: { room: Room }) {
   const msLeft = lot ? (snap.paused ? (snap.pausedRemainingMs ?? 0) : Math.max(0, lot.endsAt - (now + room.clockOffset))) : 0;
   const [bidError, setBidError] = useState<string | null>(null);
   const [viewing, setViewing] = useState<TeamId>(you.id);
+  const [allSquads, setAllSquads] = useState(false);
+  const watch = new Set(snap.watchlist);
+  const toggleStar = (id: string) => {
+    const next = new Set(watch);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    room.setWatch([...next], snap.autoSkip);
+  };
+  const setAutoSkip = (on: boolean) => room.setWatch([...watch], on);
   const shown = snap.teams.find((t) => t.id === viewing) ?? you;
 
   useEffect(() => setBidError(null), [lot?.playerId, lot?.bidCount]);
@@ -70,6 +79,9 @@ export function AuctionScreen({ room }: { room: Room }) {
         </p>
         <div className={styles.topActions}>
           {!room.connected && <span className={styles.offline}>Reconnecting…</span>}
+          <button type="button" className={styles.ghostButton} onClick={() => setAllSquads(true)}>
+            All squads
+          </button>
           <button type="button" className={styles.ghostButton} onClick={snap.paused ? room.resume : room.pause}>
             {snap.paused ? 'Resume' : 'Pause'}
           </button>
@@ -93,7 +105,7 @@ export function AuctionScreen({ room }: { room: Room }) {
         <main className={styles.stage}>
           {player && lot ? (
             <>
-              <PlayerCard player={player} />
+              <PlayerCard player={player} starred={watch.has(player.id)} onStar={() => toggleStar(player.id)} />
               <BidPanel
                 snap={snap}
                 msLeft={msLeft}
@@ -119,21 +131,58 @@ export function AuctionScreen({ room }: { room: Room }) {
             </div>
           )}
 
-          {room.sets.length > 0 && <PlayersPanel snap={snap} sets={room.sets} players={room.players} />}
+          {room.sets.length > 0 && (
+            <PlayersPanel
+              snap={snap}
+              sets={room.sets}
+              players={room.players}
+              watch={watch}
+              onStar={toggleStar}
+              onAutoSkip={setAutoSkip}
+            />
+          )}
 
           <Feed snap={snap} players={room.players} />
         </main>
 
         <SquadPanel team={shown} snap={snap} players={room.players} onShowYours={() => setViewing(you.id)} />
       </div>
+
+      {allSquads && <AllSquads snap={snap} players={room.players} onClose={() => setAllSquads(false)} />}
     </div>
   );
 }
 
-function PlayerCard({ player }: { player: PublicPlayer }) {
+function StarButton({ on, onClick, name }: { on: boolean; onClick: () => void; name: string }) {
+  return (
+    <button
+      type="button"
+      className={styles.star}
+      aria-pressed={on}
+      aria-label={on ? `Remove ${name} from your watchlist` : `Add ${name} to your watchlist`}
+      title={on ? 'On your watchlist' : 'Add to watchlist'}
+      onClick={onClick}
+    >
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden>
+        <path
+          d="M12 2.8l2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3L2.9 9.5l6.3-.9z"
+          fill={on ? 'currentColor' : 'none'}
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </button>
+  );
+}
+
+function PlayerCard({ player, starred, onStar }: { player: PublicPlayer; starred: boolean; onStar: () => void }) {
   const last = teamById(player.lastTeam);
   return (
     <article className={styles.lotCard} aria-live="polite" aria-label={`Now up: ${player.name}`}>
+      <div className={styles.cardStar}>
+        <StarButton on={starred} onClick={onStar} name={player.name} />
+      </div>
       <div className={styles.monogram} style={{ '--team': last.colors[0] } as React.CSSProperties} aria-hidden>
         {initials(player.name)}
       </div>
@@ -308,6 +357,15 @@ function TeamsRail({
             <span className={`${styles.teamPurse} num`}>{formatLakh(t.purse)}</span>
             <span className={styles.teamCounts}>
               {t.squad.length}/{maxSquad} players, {t.overseasCount} overseas
+              {t.squad.length > 0 && (
+                <>
+                  {' · '}
+                  <span className={styles.rankTag}>
+                    #{t.strength.rank}
+                    {t.strength.xi.length === 11 ? ` ${t.strength.grade}` : ''}
+                  </span>
+                </>
+              )}
             </span>
             </button>
           </li>
@@ -338,7 +396,11 @@ function SquadPanel({
   const hints: string[] = [];
   if (!team.isYou) {
     // Hints are advice for your own squad only.
-  } else if (short > 0) hints.push(`Sign ${short} more to reach the minimum of ${snap.settings.minSquad}.`);
+  } else if (team.squad.length - team.overseasCount < snap.settings.minIndians && team.squad.length > 0) {
+    const need = snap.settings.minIndians - (team.squad.length - team.overseasCount);
+    hints.push(`Sign ${need} more Indian player${need === 1 ? '' : 's'}: an XI can have only 4 overseas.`);
+  }
+  if (team.isYou && short > 0) hints.push(`Sign ${short} more to reach the minimum of ${snap.settings.minSquad}.`);
   if (team.isYou && (byRole.get('WK')?.length ?? 0) === 0) hints.push('No wicketkeeper yet.');
   for (const r of team.isYou ? (['BOWL', 'BAT', 'AR'] as Role[]) : []) {
     const have = byRole.get(r)?.length ?? 0;
@@ -364,6 +426,7 @@ function SquadPanel({
       <p className={styles.purseLeft}>
         <span className="num">{formatLakh(team.purse)}</span> left to spend
       </p>
+      {team.squad.length > 0 && <StrengthBlock team={team} players={players} />}
       {hints.length > 0 && (
         <ul className={styles.hints}>
           {hints.slice(0, 3).map((h) => (
@@ -447,21 +510,40 @@ type PlayerStatus =
   | { kind: 'next' }
   | { kind: 'later' };
 
+type RoleFilter = 'all' | 'starred' | Role;
+
+const FILTERS: { id: RoleFilter; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'starred', label: 'Starred' },
+  { id: 'BAT', label: 'Batters' },
+  { id: 'WK', label: 'Keepers' },
+  { id: 'AR', label: 'All-rounders' },
+  { id: 'BOWL', label: 'Bowlers' },
+];
+
 function PlayersPanel({
   snap,
   sets,
   players,
+  watch,
+  onStar,
+  onAutoSkip,
 }: {
   snap: RoomSnapshot;
   sets: SetView[];
   players: Map<string, PublicPlayer>;
+  watch: Set<string>;
+  onStar: (id: string) => void;
+  onAutoSkip: (on: boolean) => void;
 }) {
   const [tab, setTab] = useState<'set' | 'upcoming'>('set');
+  const [filter, setFilter] = useState<RoleFilter>('all');
   const lot = snap.lot;
 
   const sold = new Map<string, { teamId: TeamId; price: number }>();
   for (const t of snap.teams) for (const s of t.squad) sold.set(s.playerId, { teamId: t.id, price: s.price });
   const unsold = new Set(snap.unsold);
+  const upcomingSet = new Set(snap.upcoming);
   const nextId = snap.upcoming[0];
   const setOf = new Map<string, SetView>();
   for (const set of sets) for (const id of set.playerIds) setOf.set(id, set);
@@ -471,19 +553,24 @@ function PlayersPanel({
     const s = sold.get(id);
     if (s) return { kind: 'sold', ...s };
     if (id === nextId) return { kind: 'next' };
-    if (snap.upcoming.includes(id)) return { kind: 'later' };
+    if (upcomingSet.has(id)) return { kind: 'later' };
     if (unsold.has(id)) return { kind: 'unsold' };
     return { kind: 'later' };
   };
 
-  // The current set: in the accelerated round, the players brought back.
   const accelerated = lot?.setCode === 'ACC';
   const currentSet = accelerated ? null : sets.find((s) => s.code === lot?.setCode);
-  const setIds = accelerated ? [lot!.playerId, ...snap.upcoming] : (currentSet?.playerIds ?? []);
+  const setIds = accelerated && lot ? [lot.playerId, ...snap.upcoming] : (currentSet?.playerIds ?? []);
   const setTitle = accelerated ? 'Accelerated round' : (currentSet?.label ?? 'Current set');
 
-  // Coming up: the next 24 players in order, grouped by set.
-  const upcoming = snap.upcoming.slice(0, 24);
+  const passes = (id: string) => {
+    const p = players.get(id);
+    if (!p) return false;
+    if (filter === 'all') return true;
+    if (filter === 'starred') return watch.has(id);
+    return p.role === filter;
+  };
+  const upcoming = snap.upcoming.filter(passes);
   const groups: { label: string; ids: string[] }[] = [];
   for (const id of upcoming) {
     const label = accelerated ? 'Accelerated round' : (setOf.get(id)?.label ?? '');
@@ -491,9 +578,37 @@ function PlayersPanel({
     if (last && last.label === label) last.ids.push(id);
     else groups.push({ label, ids: [id] });
   }
+  const starredAhead = snap.upcoming.filter((id) => watch.has(id)).length;
+  const nextStar = snap.upcoming.findIndex((id) => watch.has(id));
+
+  const row = (id: string) => (
+    <PlayerRow
+      key={id}
+      player={players.get(id)}
+      status={status(id)}
+      you={snap.you}
+      starred={watch.has(id)}
+      onStar={() => onStar(id)}
+    />
+  );
 
   return (
     <section className={styles.players} aria-label="Players in the auction">
+      <div className={styles.watchBar}>
+        <label className={styles.switch}>
+          <input type="checkbox" checked={snap.autoSkip} onChange={(e) => onAutoSkip(e.target.checked)} />
+          <span className={styles.switchTrack} aria-hidden />
+          <span>Auto-skip players I haven't starred</span>
+        </label>
+        <span className={styles.watchNote}>
+          {snap.autoSkip
+            ? starredAhead === 0
+              ? 'No starred players ahead: everyone will be skipped. Star some below.'
+              : `${starredAhead} starred ahead${nextStar >= 0 ? `, next in ${nextStar + 1}` : ''}`
+            : 'Star players to build a watchlist.'}
+        </span>
+      </div>
+
       <div className={styles.tabs} role="tablist">
         <button type="button" role="tab" aria-selected={tab === 'set'} onClick={() => setTab('set')}>
           This set
@@ -506,41 +621,55 @@ function PlayersPanel({
       {tab === 'set' ? (
         <div role="tabpanel">
           <h3 className={styles.panelTitle}>{setTitle}</h3>
-          <ul className={styles.playerList}>
-            {setIds.map((id) => (
-              <PlayerRow key={id} player={players.get(id)} status={status(id)} you={snap.you} />
-            ))}
-          </ul>
+          <ul className={styles.playerList}>{setIds.map(row)}</ul>
         </div>
       ) : (
         <div role="tabpanel">
-          {groups.length === 0 ? (
-            <p className={styles.empty}>No more players in this round.</p>
-          ) : (
-            groups.map((g, i) => (
-              <div key={`${g.label}-${i}`}>
-                <h3 className={styles.panelTitle}>{g.label}</h3>
-                <ul className={styles.playerList}>
-                  {g.ids.map((id) => (
-                    <PlayerRow key={id} player={players.get(id)} status={status(id)} you={snap.you} />
-                  ))}
-                </ul>
-              </div>
-            ))
-          )}
-          {snap.upcoming.length > upcoming.length && (
-            <p className={styles.more}>and {snap.upcoming.length - upcoming.length} more after these</p>
-          )}
+          <div className={styles.filters} role="group" aria-label="Filter players">
+            {FILTERS.map((f) => (
+              <button key={f.id} type="button" aria-pressed={filter === f.id} onClick={() => setFilter(f.id)}>
+                {f.label}
+              </button>
+            ))}
+          </div>
+          <div className={styles.scrollList}>
+            {groups.length === 0 ? (
+              <p className={styles.empty}>
+                {filter === 'starred' ? 'No starred players ahead. Tap a star to add one.' : 'No players here.'}
+              </p>
+            ) : (
+              groups.map((g, i) => (
+                <div key={`${g.label}-${i}`}>
+                  <h3 className={styles.panelTitle}>{g.label}</h3>
+                  <ul className={styles.playerList}>{g.ids.map(row)}</ul>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       )}
     </section>
   );
 }
 
-function PlayerRow({ player, status, you }: { player?: PublicPlayer; status: PlayerStatus; you: TeamId | null }) {
+function PlayerRow({
+  player,
+  status,
+  you,
+  starred,
+  onStar,
+}: {
+  player?: PublicPlayer;
+  status: PlayerStatus;
+  you: TeamId | null;
+  starred: boolean;
+  onStar: () => void;
+}) {
   if (!player) return null;
+  const canStar = status.kind === 'up' || status.kind === 'next' || status.kind === 'later';
   return (
-    <li className={styles.playerRow} data-status={status.kind}>
+    <li className={styles.playerRow} data-status={status.kind} data-starred={starred}>
+      {canStar ? <StarButton on={starred} onClick={onStar} name={player.name} /> : <span className={styles.starSpacer} />}
       <span className={styles.playerName}>
         {player.name}
         <span className={styles.playerMeta}>
@@ -562,5 +691,140 @@ function PlayerRow({ player, status, you }: { player?: PublicPlayer; status: Pla
         )}
       </span>
     </li>
+  );
+}
+
+const ordinal = (n: number) => `${n}${n % 10 === 1 && n !== 11 ? 'st' : n % 10 === 2 && n !== 12 ? 'nd' : n % 10 === 3 && n !== 13 ? 'rd' : 'th'}`;
+
+function StrengthBlock({ team, players }: { team: TeamView; players: Map<string, PublicPlayer> }) {
+  const [showXI, setShowXI] = useState(false);
+  const s = team.strength;
+  return (
+    <div className={styles.strength}>
+      <div className={styles.strengthTop}>
+        {s.xi.length === 11 && <span className={styles.gradeChip}>{s.grade}</span>}
+        <span>
+          <strong className="num">{s.overall.toFixed(1)}</strong> strength, {ordinal(s.rank)} of 10
+          {s.xi.length < 11 && <span className={styles.gradeLater}> (grade once you can field an XI)</span>}
+        </span>
+      </div>
+      <dl className={styles.strengthBars}>
+        <div>
+          <dt>Batting</dt>
+          <dd>
+            <span className={styles.bar} style={{ '--v': `${s.batting}%` } as React.CSSProperties} />
+            <span className="num">{s.batting.toFixed(0)}</span>
+          </dd>
+        </div>
+        <div>
+          <dt>Bowling</dt>
+          <dd>
+            <span className={styles.bar} style={{ '--v': `${s.bowling}%` } as React.CSSProperties} />
+            <span className="num">{s.bowling.toFixed(0)}</span>
+          </dd>
+        </div>
+      </dl>
+      {s.issues.length > 0 && <p className={styles.issues}>{s.issues.join('. ')}.</p>}
+      <button type="button" className={styles.linkish} onClick={() => setShowXI((v) => !v)} aria-expanded={showXI}>
+        {showXI ? 'Hide best XI' : 'Show best XI'}
+      </button>
+      {showXI && (
+        <ol className={styles.xiList}>
+          {s.xi.map((id) => {
+            const p = players.get(id);
+            return (
+              <li key={id}>
+                {p?.name}
+                {p?.isOverseas && <span className={styles.ovMark}> (OS)</span>}
+              </li>
+            );
+          })}
+        </ol>
+      )}
+    </div>
+  );
+}
+
+function AllSquads({
+  snap,
+  players,
+  onClose,
+}: {
+  snap: RoomSnapshot;
+  players: Map<string, PublicPlayer>;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  const teams = [...snap.teams].sort((a, b) => a.strength.rank - b.strength.rank);
+  return (
+    <div className={styles.allOverlay} role="dialog" aria-modal="true" aria-labelledby="all-squads-title">
+      <div className={styles.allHead}>
+        <h2 id="all-squads-title">All squads</h2>
+        <p>Live, strongest first. The auction keeps running while this is open.</p>
+        <button type="button" className={styles.ghostButton} onClick={onClose} autoFocus>
+          Close
+        </button>
+      </div>
+      <div className={styles.allGrid}>
+        {teams.map((t) => {
+          const byRole = new Map<Role, { p: PublicPlayer; price: number }[]>(ROLES.map((r) => [r, []]));
+          for (const s of t.squad) {
+            const p = players.get(s.playerId);
+            if (p) byRole.get(p.role)?.push({ p, price: s.price });
+          }
+          return (
+            <section key={t.id} className={styles.allCard} data-you={t.isYou}>
+              <header>
+                <TeamBadge id={t.id} size={30} />
+                <div>
+                  <h3>
+                    {teamById(t.id).name}
+                    {t.isYou && <span className={styles.youTag}>You</span>}
+                  </h3>
+                  <p>
+                    {t.squad.length} of {snap.settings.maxSquad}, {t.overseasCount} OS,{' '}
+                    <span className="num">{formatLakh(t.purse)}</span> left
+                  </p>
+                </div>
+                {t.squad.length > 0 && (
+                  <span className={styles.allRank}>
+                    #{t.strength.rank}
+                    {t.strength.xi.length === 11 && <span className={styles.gradeChip}>{t.strength.grade}</span>}
+                  </span>
+                )}
+              </header>
+              {t.squad.length === 0 ? (
+                <p className={styles.empty}>No players yet.</p>
+              ) : (
+                ROLES.map((r) => {
+                  const list = (byRole.get(r) ?? []).sort((a, b) => b.price - a.price);
+                  if (list.length === 0) return null;
+                  return (
+                    <div key={r} className={styles.roleGroup}>
+                      <h4>{ROLE_PLURAL[r]}</h4>
+                      <ul>
+                        {list.map(({ p, price }) => (
+                          <li key={p.id}>
+                            <span>
+                              {p.name}
+                              {p.isOverseas && <span className={styles.ovMark}> (OS)</span>}
+                            </span>
+                            <span className="num">{formatLakh(price)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                })
+              )}
+            </section>
+          );
+        })}
+      </div>
+    </div>
   );
 }
