@@ -45,6 +45,11 @@ export interface AuctionSettings {
   minSquad: number;
   maxSquad: number;
   maxOverseas: number;
+  /**
+   * A playing XI may have at most 4 overseas players, so a squad needs at least
+   * 11 − 4 = 7 Indian players to field a legal XI.
+   */
+  minIndians: number;
   /** Cheapest possible base price; used to reserve money for unfilled minimum slots. */
   minBasePrice: Lakh;
   /**
@@ -64,6 +69,7 @@ export type BidRejection =
   | 'OWN_HIGH_BID'
   | 'SQUAD_FULL'
   | 'OVERSEAS_FULL'
+  | 'XI_RULE'
   | 'INSUFFICIENT_PURSE'
   | 'WRONG_AMOUNT';
 

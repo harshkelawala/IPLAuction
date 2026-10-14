@@ -82,7 +82,7 @@ export function aiMaxPrice(auction: Auction, teamId: TeamId, playerId: string, o
   if (player.isOverseas && team.overseasCount >= settings.maxOverseas) return 0;
 
   const affordable = Math.min(
-    maxAffordableBid(auction.teamState(teamId), settings),
+    maxAffordableBid(auction.teamState(teamId), settings, auction.lotPlayer(playerId)),
     team.purse - realisticReserve(auction, teamId, playerId),
   );
   if (affordable < player.basePrice) return 0;
@@ -134,22 +134,46 @@ export function aiMaxPrice(auction: Auction, teamId: TeamId, playerId: string, o
 export function realisticReserve(auction: Auction, teamId: TeamId, playerId: string): Lakh {
   const team = auction.team(teamId);
   const settings = auction.settings;
-  const slots = settings.minSquad - (team.squad.length + 1);
-  if (slots <= 0) return 0;
   const current = auction.player(playerId);
+  const indiansAfter = team.squad.length - team.overseasCount + (current.isOverseas ? 0 : 1);
+  const indiansNeeded = Math.max(0, settings.minIndians - indiansAfter);
+  const toMinimum = Math.max(0, settings.minSquad - (team.squad.length + 1));
+  const slots = Math.max(toMinimum, indiansNeeded);
+  if (slots <= 0) return 0;
   const overseasAfter = team.overseasCount + (current.isOverseas ? 1 : 0);
   const overseasOk = overseasAfter < settings.maxOverseas;
   const candidates = new Set<string>([...auction.upcoming.map((q) => q.playerId), ...auction.unsoldPlayers]);
   candidates.delete(playerId);
-  const prices: Lakh[] = [];
+  const indian: Lakh[] = [];
+  const any: Lakh[] = [];
   for (const id of candidates) {
     const p = auction.player(id);
-    if (p.isOverseas && !overseasOk) continue;
-    prices.push(p.basePrice);
+    if (!p.isOverseas) indian.push(p.basePrice);
+    if (!p.isOverseas || overseasOk) any.push(p.basePrice);
   }
-  prices.sort((a, b) => a - b);
+  indian.sort((a, b) => a - b);
+  any.sort((a, b) => a - b);
+  // The Indians the XI needs come first, at the cheapest Indian prices; any other slots
+  // to the minimum squad at the cheapest prices of all.
   let reserve = 0;
-  for (let i = 0; i < slots; i++) reserve += prices[i] ?? settings.minBasePrice;
+  for (let i = 0; i < indiansNeeded; i++) reserve += indian[i] ?? settings.minBasePrice;
+  const used = new Map<Lakh, number>();
+  for (let i = 0; i < indiansNeeded; i++) {
+    const price = indian[i] ?? settings.minBasePrice;
+    used.set(price, (used.get(price) ?? 0) + 1);
+  }
+  let others = slots - indiansNeeded;
+  for (const price of any) {
+    if (others <= 0) break;
+    const u = used.get(price) ?? 0;
+    if (u > 0) {
+      used.set(price, u - 1);
+      continue;
+    }
+    reserve += price;
+    others--;
+  }
+  reserve += Math.max(0, others) * settings.minBasePrice;
   return reserve;
 }
 

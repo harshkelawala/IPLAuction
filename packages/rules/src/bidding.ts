@@ -28,14 +28,25 @@ export function nextBid(current: Lakh | null, basePrice: Lakh, slabs: IncrementS
  * Money a team must keep back so it can still reach the minimum squad
  * at the cheapest base price, assuming it wins the current player.
  */
-export function purseReserve(team: TeamState, settings: AuctionSettings): Lakh {
-  const slotsStillNeeded = Math.max(0, settings.minSquad - (team.squadCount + 1));
-  return slotsStillNeeded * settings.minBasePrice;
+export function purseReserve(team: TeamState, settings: AuctionSettings, player?: LotPlayer): Lakh {
+  return slotsStillNeeded(team, settings, player) * settings.minBasePrice;
+}
+
+/** Indian players this team still needs to sign, after buying `player`, to field a legal XI. */
+export function indiansStillNeeded(team: TeamState, settings: AuctionSettings, player?: LotPlayer): number {
+  const indians = team.squadCount - team.overseasCount + (player && !player.isOverseas ? 1 : 0);
+  return Math.max(0, settings.minIndians - indians);
+}
+
+/** Slots still to fill after buying `player`: the minimum squad, or the Indians the XI needs, whichever is more. */
+export function slotsStillNeeded(team: TeamState, settings: AuctionSettings, player?: LotPlayer): number {
+  const toMinimum = Math.max(0, settings.minSquad - (team.squadCount + 1));
+  return Math.max(toMinimum, indiansStillNeeded(team, settings, player));
 }
 
 /** The most this team can bid on the current player without breaking the reserve rule. */
-export function maxAffordableBid(team: TeamState, settings: AuctionSettings): Lakh {
-  return team.purse - purseReserve(team, settings);
+export function maxAffordableBid(team: TeamState, settings: AuctionSettings, player?: LotPlayer): Lakh {
+  return team.purse - purseReserve(team, settings, player);
 }
 
 export interface BidContext {
@@ -69,11 +80,22 @@ export function checkBid(
       message: `Overseas slots full (${settings.maxOverseas})`,
     };
   }
+  if (player.isOverseas) {
+    const slotsAfter = settings.maxSquad - (team.squadCount + 1);
+    const indiansNeeded = indiansStillNeeded(team, settings, player);
+    if (indiansNeeded > slotsAfter) {
+      return {
+        ok: false,
+        reason: 'XI_RULE',
+        message: `Keep your remaining slots for Indian players: an XI can have only 4 overseas, so you need ${settings.minIndians} Indians`,
+      };
+    }
+  }
   const expected = nextBid(ctx.currentBid, player.basePrice, settings.increments);
   if (amount !== expected) {
     return { ok: false, reason: 'WRONG_AMOUNT', message: 'Bid must be the next increment' };
   }
-  if (amount > maxAffordableBid(team, settings)) {
+  if (amount > maxAffordableBid(team, settings, player)) {
     return {
       ok: false,
       reason: 'INSUFFICIENT_PURSE',

@@ -12,10 +12,15 @@ export const DEFAULT_INCREMENTS: IncrementSlab[] = [
   { below: Number.POSITIVE_INFINITY, step: 25 },
 ];
 
+/** A playing XI: 11 players, at most 4 of them overseas. */
+export const XI_SIZE = 11;
+export const MAX_OVERSEAS_IN_XI = 4;
+
 const SHARED = {
   minSquad: 18,
   maxSquad: 25,
   maxOverseas: 8,
+  minIndians: XI_SIZE - MAX_OVERSEAS_IN_XI,
   minBasePrice: 30,
   increments: DEFAULT_INCREMENTS,
   openingTimerMs: 15_000,

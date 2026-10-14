@@ -111,6 +111,35 @@ describe('checkBid', () => {
   });
 });
 
+describe('playing XI rule', () => {
+  const open = { currentBid: null, leadingTeam: null };
+
+  it('needs 7 Indians, so an XI never has more than 4 overseas', () => {
+    expect(s.minIndians).toBe(7);
+  });
+
+  it('blocks an overseas buy that leaves too few slots for Indians', () => {
+    // 14-player squads with a loose overseas cap, so only the XI rule can bite.
+    const quick = { ...s, minSquad: 11, maxSquad: 14, maxOverseas: 8 };
+    // 12 players (6 Indian, 6 overseas): one more overseas leaves 1 slot for the 1 Indian still needed.
+    expect(checkBid(freshTeam({ squadCount: 12, overseasCount: 6 }), overseasBowl, 150, open, quick)).toEqual({ ok: true });
+    // 13 players (6 Indian, 7 overseas): another overseas leaves no slot for the 7th Indian.
+    expect(checkBid(freshTeam({ squadCount: 13, overseasCount: 7 }), overseasBowl, 150, open, quick)).toMatchObject({
+      reason: 'XI_RULE',
+    });
+    // The same team can still buy an Indian.
+    expect(checkBid(freshTeam({ squadCount: 13, overseasCount: 7 }), indianBat, 200, open, quick)).toEqual({ ok: true });
+  });
+
+  it('keeps purse back for the Indians still needed', () => {
+    const quick = { ...s, minSquad: 11, maxSquad: 14, maxOverseas: 8 };
+    // 6 players, all overseas: buying another overseas leaves 7 Indians to sign (more than the 4 slots to the minimum).
+    const team = freshTeam({ squadCount: 6, overseasCount: 6, purse: 1_000 });
+    expect(maxAffordableBid(team, quick, overseasBowl)).toBe(1_000 - 7 * 30);
+    expect(maxAffordableBid(team, quick, indianBat)).toBe(1_000 - 6 * 30);
+  });
+});
+
 describe('sales', () => {
   it('charges the full bid but caps overseas pay in mini mode', () => {
     expect(settleSale(overseasBowl, 2520, MINI_DEFAULTS)).toEqual({ purseCharge: 2520, playerSalary: 1800 });
