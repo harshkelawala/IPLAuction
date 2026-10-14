@@ -85,7 +85,8 @@ export function aiMaxPrice(auction: Auction, teamId: TeamId, playerId: string, o
     maxAffordableBid(auction.teamState(teamId), settings, auction.lotPlayer(playerId)),
     team.purse - realisticReserve(auction, teamId, playerId),
   );
-  if (affordable < player.basePrice) return 0;
+  const base = auction.basePriceOf(playerId);
+  if (affordable < base) return 0;
 
   // 1. Need: chase empty roles, back off from full ones.
   const targets = squadTargets(settings.maxSquad);
@@ -114,13 +115,24 @@ export function aiMaxPrice(auction: Auction, teamId: TeamId, playerId: string, o
   // 4. Not every team wants every player: below star level, a team may sit a player out
   //    (more likely if the role is already covered). This is what lets many players
   //    go for their base price, as in the real auction.
-  const short = settings.minSquad - squadCount;
-  const urgent = short > 0 && (auction.progress > 0.7 || auction.currentPhase === 'accelerated');
+  // Indians still needed for a legal XI (at most 4 overseas in an XI).
+  const indiansNeeded = Math.max(0, settings.minIndians - (squadCount - team.overseasCount));
+  const openSlots = settings.maxSquad - squadCount;
+  // Keep the last slots for Indians: never take an overseas player into them.
+  if (player.isOverseas && indiansNeeded >= openSlots - 1) return 0;
+  // How tight the Indian requirement is: 0 = plenty of room, 1 = every open slot must be an Indian.
+  const indianPressure = indiansNeeded / Math.max(1, openSlots);
+  const late = auction.progress > 0.6 || auction.currentPhase === 'accelerated';
+  const shortOfSquad = settings.minSquad - squadCount > 0;
+  const shortOfIndians = !player.isOverseas && indiansNeeded > 0 && (late || indianPressure >= 0.5);
+  const urgent = (shortOfSquad && late) || shortOfIndians;
   if (!urgent && !isInterested(opts.seed, teamId, player, need)) return 0;
 
-  // 5. Late in the auction, a team short of the minimum squad takes anyone near base price.
-  if (short > 0 && auction.progress > 0.7) max = Math.max(max, player.basePrice * 1.5);
-  if (short > 0 && auction.currentPhase === 'accelerated') max = Math.max(max, player.basePrice * 2);
+  // 5. Once Indians get tight, an Indian is worth more, but never past the budget cap.
+  if (shortOfIndians) max = Math.min(max * (1 + 0.3 * indianPressure), budgetCap);
+
+  // 6. A team short of its minimum squad late on (or short of Indians) takes anyone near base price.
+  if (urgent) max = Math.max(max, base * (auction.currentPhase === 'accelerated' ? 2 : 1.5));
 
   return Math.floor(Math.min(max, affordable));
 }
@@ -156,7 +168,8 @@ export function realisticReserve(auction: Auction, teamId: TeamId, playerId: str
   // The Indians the XI needs come first, at the cheapest Indian prices; any other slots
   // to the minimum squad at the cheapest prices of all.
   let reserve = 0;
-  for (let i = 0; i < indiansNeeded; i++) reserve += indian[i] ?? settings.minBasePrice;
+  // Rivals are hunting the same cheap Indians, so keep a 50% margin on that part.
+  for (let i = 0; i < indiansNeeded; i++) reserve += Math.round((indian[i] ?? settings.minBasePrice) * 1.5);
   const used = new Map<Lakh, number>();
   for (let i = 0; i < indiansNeeded; i++) {
     const price = indian[i] ?? settings.minBasePrice;

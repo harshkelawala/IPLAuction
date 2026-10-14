@@ -111,7 +111,9 @@ describe('Auction state machine', () => {
     const a = smallAuction([fakePlayer('a')]);
     a.start(0);
     a.tick(s.openingTimerMs);
-    a.placeBid('GT', 100, s.openingTimerMs + 1);
+    // Unsold players come back at the lowest base price.
+    expect(a.nextBidAmount()).toBe(s.minBasePrice);
+    a.placeBid('GT', s.minBasePrice, s.openingTimerMs + 1);
     a.tick(s.openingTimerMs + 1 + ACCELERATED_TIMER_MS);
     expect(a.allSales).toMatchObject([{ playerId: 'a', teamId: 'GT', phase: 'accelerated' }]);
     expect(a.unsoldPlayers).toEqual([]);

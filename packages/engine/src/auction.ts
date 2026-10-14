@@ -110,13 +110,21 @@ export class Auction {
 
   lotPlayer(id: string): LotPlayer {
     const p = this.player(id);
-    return { id: p.id, role: p.role, isOverseas: p.isOverseas, basePrice: p.basePrice };
+    return { id: p.id, role: p.role, isOverseas: p.isOverseas, basePrice: this.basePriceOf(id) };
+  }
+
+  /**
+   * Where bidding opens for a player right now. In the accelerated round, unsold players
+   * come back at the pool's lowest base price, so a team that is short can always fill its squad.
+   */
+  basePriceOf(id: string): Lakh {
+    return this.phase === 'accelerated' ? this.settings.minBasePrice : this.player(id).basePrice;
   }
 
   /** The amount the next bid on the current lot must be, or null if no lot is open. */
   nextBidAmount(): Lakh | null {
     if (!this.lot) return null;
-    return nextBid(this.lot.currentBid, this.player(this.lot.playerId).basePrice, this.settings.increments);
+    return nextBid(this.lot.currentBid, this.basePriceOf(this.lot.playerId), this.settings.increments);
   }
 
   /** Whether `teamId` could bid `amount` right now; what the UI uses to enable the Bid button. */
@@ -253,7 +261,7 @@ export class Auction {
       type: 'player_up',
       playerId: item.playerId,
       setCode: item.setCode,
-      basePrice: this.player(item.playerId).basePrice,
+      basePrice: this.basePriceOf(item.playerId),
       endsAt: this.lot.endsAt,
     });
     return events;

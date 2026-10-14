@@ -24,9 +24,21 @@ export const POOL_SIZES: Record<PoolPreset, number> = {
   full: Number.POSITIVE_INFINITY,
 };
 
-/** Keep the most valuable N players (ties broken by rating, then name for stability). */
+/** Share of a limited pool that may be overseas, close to real IPL squads (8 of 25 at most). */
+export const MAX_OVERSEAS_SHARE = 0.36;
+
+/**
+ * Keep the most valuable N players (ties broken by rating, then name for stability),
+ * with at most 36% overseas so every team can find the 7 Indians a legal XI needs.
+ */
 export function selectPool(players: Player[], preset: PoolPreset): Player[] {
-  return [...players].sort(byValue).slice(0, POOL_SIZES[preset]);
+  const size = POOL_SIZES[preset];
+  const sorted = [...players].sort(byValue);
+  if (sorted.length <= size) return sorted;
+  const overseasCap = Math.floor(size * MAX_OVERSEAS_SHARE);
+  const overseas = sorted.filter((p) => p.isOverseas).slice(0, overseasCap);
+  const indians = sorted.filter((p) => !p.isOverseas).slice(0, size - overseas.length);
+  return [...overseas, ...indians].sort(byValue);
 }
 
 function byValue(a: Player, b: Player): number {

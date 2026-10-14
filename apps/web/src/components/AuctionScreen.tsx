@@ -412,7 +412,7 @@ function Feed({ snap, players }: { snap: RoomSnapshot; players: Map<string, Publ
           if (e.kind === 'phase') {
             return (
               <li key={e.id} className={styles.feedPhase}>
-                {e.phase === 'accelerated' ? 'Accelerated round: unsold players come back once.' : 'Auction complete.'}
+                {e.phase === 'accelerated' ? 'Accelerated round: unsold players come back once at the lowest base price.' : 'Auction complete.'}
               </li>
             );
           }
