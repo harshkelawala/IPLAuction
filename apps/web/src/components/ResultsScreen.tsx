@@ -83,6 +83,13 @@ export function ResultsScreen({ snapshot, players }: { snapshot: RoomSnapshot; p
             )}
           </div>
         </div>
+        {you.squad.length > 0 && (
+          <p className={styles.xiLine}>
+            <strong>Attack:</strong> {you.strength.pace} pace, {you.strength.spin} spin.{' '}
+            {[...you.strength.notes, ...you.strength.issues].join('. ')}
+            {you.strength.notes.length + you.strength.issues.length > 0 ? '.' : ''}
+          </p>
+        )}
         {you.strength.xi.length > 0 && (
           <p className={styles.xiLine}>
             <strong>Best XI:</strong> {you.strength.xi.map((id) => players.get(id)?.name).join(', ')}
@@ -98,7 +105,10 @@ export function ResultsScreen({ snapshot, players }: { snapshot: RoomSnapshot; p
       <section aria-labelledby="ranking" className={styles.section}>
         <h2 id="ranking">Final ranking</h2>
         <p className={styles.note}>
-          Strength of each team's best legal XI (at most 4 overseas): 45% batting, 45% bowling, 10% bench.
+          Strength of each team's best legal XI (at most 4 overseas). Batting and bowling count 47.5% each, with the top
+          order and strike bowlers weighted most, and the bench 5%. Balance adds or takes points: 2 pace and a spinner are
+          needed, a 3-pace, 2-spin attack and a left-hander in the top six earn a bonus. Value is strength above a
+          replacement-level side per ₹10 cr spent.
         </p>
         <div className={styles.tableWrap}>
           <table className={styles.ranking}>
@@ -110,6 +120,9 @@ export function ResultsScreen({ snapshot, players }: { snapshot: RoomSnapshot; p
                 <th scope="col" className={styles.numCol}>Strength</th>
                 <th scope="col" className={styles.numCol}>Batting</th>
                 <th scope="col" className={styles.numCol}>Bowling</th>
+                <th scope="col" className={styles.numCol}>Balance</th>
+                <th scope="col">Attack</th>
+                <th scope="col" className={styles.numCol}>Value</th>
                 <th scope="col" className={styles.numCol}>Spent</th>
               </tr>
             </thead>
@@ -124,6 +137,7 @@ export function ResultsScreen({ snapshot, players }: { snapshot: RoomSnapshot; p
                       {t.isYou && <span className={styles.youTag}>You</span>}
                     </span>
                     {t.strength.issues.length > 0 && <span className={styles.issue}>{t.strength.issues.join('. ')}</span>}
+                    {t.strength.notes.length > 0 && <span className={styles.good}>{t.strength.notes.join('. ')}</span>}
                   </td>
                   <td>
                     <span className={styles.grade}>{t.strength.grade}</span>
@@ -131,6 +145,14 @@ export function ResultsScreen({ snapshot, players }: { snapshot: RoomSnapshot; p
                   <td className={`num ${styles.numCol}`}>{t.strength.overall.toFixed(1)}</td>
                   <td className={`num ${styles.numCol}`}>{t.strength.batting.toFixed(0)}</td>
                   <td className={`num ${styles.numCol}`}>{t.strength.bowling.toFixed(0)}</td>
+                  <td className={`num ${styles.numCol}`}>
+                    {t.strength.balance > 0 ? '+' : ''}
+                    {t.strength.balance.toFixed(1)}
+                  </td>
+                  <td className={styles.attackCell}>
+                    {t.strength.pace} pace, {t.strength.spin} spin
+                  </td>
+                  <td className={`num ${styles.numCol}`}>{t.strength.value === null ? '–' : t.strength.value.toFixed(1)}</td>
                   <td className={`num ${styles.numCol}`}>{formatLakh(spent(t))}</td>
                 </tr>
               ))}

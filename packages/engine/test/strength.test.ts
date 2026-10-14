@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Player } from '@ipl/data';
-import { bestXI, grade, teamStrength } from '../src/index';
+import { bestXI, grade, teamStrength, valueForMoney } from '../src/index';
 
 let n = 0;
 function p(role: Player['role'], rating: number, overseas = false): Player {
@@ -32,12 +32,43 @@ describe('best XI', () => {
   });
 });
 
+describe('attack mix and value', () => {
+  const withStyle = (pl: Player, style: Player['bowlingStyle']) => ({ ...pl, bowlingStyle: style });
+
+  it('wants 2 pace and a spinner, and rewards a balanced attack', () => {
+    const allPace = balanced().map((x) => (x.role === 'BOWL' || x.role === 'AR' ? withStyle(x, 'RFM') : x));
+    const s1 = teamStrength(allPace, { minSquad: 11 });
+    expect(s1.spin).toBe(0);
+    expect(s1.issues).toContain('No spinner in the XI');
+
+    const mixed = balanced().map((x, i) =>
+      x.role === 'BOWL' || x.role === 'AR' ? withStyle(x, i % 2 === 0 ? 'LB' : 'RF') : x,
+    );
+    const s2 = teamStrength(mixed, { minSquad: 11 });
+    expect(s2.pace).toBeGreaterThanOrEqual(2);
+    expect(s2.spin).toBeGreaterThanOrEqual(1);
+    expect(s2.issues).not.toContain('No spinner in the XI');
+    expect(s2.overall).toBeGreaterThan(s1.overall);
+  });
+
+  it('counts an empty bench as replacement level, not a disaster', () => {
+    const eleven = balanced().slice(0, 11);
+    expect(teamStrength(eleven, { minSquad: 11 }).bench).toBe(60);
+  });
+
+  it('scores value as strength above replacement per 10 crore', () => {
+    expect(valueForMoney(90, 10_000)).toBe(3);
+    expect(valueForMoney(90, 0)).toBeNull();
+  });
+});
+
 describe('team strength', () => {
   it('scores a better squad higher', () => {
     const strong = teamStrength(balanced(), { minSquad: 11 });
     const weak = teamStrength(balanced().map((x) => ({ ...x, rating: x.rating - 15 })), { minSquad: 11 });
     expect(strong.overall).toBeGreaterThan(weak.overall);
-    expect(strong.issues).toEqual([]);
+    // The fixture's bowlers are all pace, so the only issue is the missing spinner.
+    expect(strong.issues).toEqual(['No spinner in the XI']);
   });
 
   it('flags a missing keeper and too few bowlers', () => {
@@ -55,6 +86,6 @@ describe('team strength', () => {
   });
 
   it('grades on the calibrated scale', () => {
-    expect([grade(92), grade(88), grade(85), grade(82), grade(79), grade(70)]).toEqual(['A+', 'A', 'B+', 'B', 'C', 'D']);
+    expect([grade(94), grade(92), grade(90), grade(88), grade(86), grade(80)]).toEqual(['A+', 'A', 'B+', 'B', 'C', 'D']);
   });
 });

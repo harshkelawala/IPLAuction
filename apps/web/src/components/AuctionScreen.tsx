@@ -724,6 +724,15 @@ function StrengthBlock({ team, players }: { team: TeamView; players: Map<string,
           </dd>
         </div>
       </dl>
+      <p className={styles.attack}>
+        Attack: {s.pace} pace, {s.spin} spin
+        {s.value !== null && (
+          <>
+            {' · '}Value <span className="num">{s.value.toFixed(1)}</span> per ₹10 cr
+          </>
+        )}
+      </p>
+      {s.notes.length > 0 && <p className={styles.notes}>{s.notes.join('. ')}.</p>}
       {s.issues.length > 0 && <p className={styles.issues}>{s.issues.join('. ')}.</p>}
       <button type="button" className={styles.linkish} onClick={() => setShowXI((v) => !v)} aria-expanded={showXI}>
         {showXI ? 'Hide best XI' : 'Show best XI'}

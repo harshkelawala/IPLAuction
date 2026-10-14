@@ -34,16 +34,25 @@ export interface SoloSettings {
 }
 
 export interface StrengthView {
-  /** 0–100, best legal XI: 45% batting, 45% bowling, 10% bench. */
+  /** 0–100, best legal XI: 47.5% batting, 47.5% bowling, 5% bench, plus balance points. */
   overall: number;
   batting: number;
   bowling: number;
   grade: string;
   /** 1 = strongest squad right now. */
   rank: number;
+  /** Points for the attack mix and batting variety. */
+  balance: number;
+  /** Pace and spin bowling options in the best XI. */
+  pace: number;
+  spin: number;
   /** Best legal XI (at most 4 overseas). */
   xi: string[];
   issues: string[];
+  /** Strengths, e.g. "Balanced attack: 3 pace, 2 spin". */
+  notes: string[];
+  /** Strength above a replacement-level side per ₹10 cr spent; null before any spend. */
+  value: number | null;
 }
 
 export interface TeamView {

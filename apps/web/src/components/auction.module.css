@@ -1172,3 +1172,15 @@
 .allCard .roleGroup {
   margin-top: 8px;
 }
+
+.attack {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.notes {
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+  color: #9fe0b8;
+}

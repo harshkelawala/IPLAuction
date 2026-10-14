@@ -281,3 +281,14 @@
 .xiLine strong {
   color: var(--ink);
 }
+
+.good {
+  display: block;
+  font-size: 0.8rem;
+  color: #9fe0b8;
+}
+
+.attackCell {
+  white-space: nowrap;
+  color: var(--muted);
+}

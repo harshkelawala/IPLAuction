@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { Player } from '@ipl/data';
 import { buildSets, mulberry32 } from '@ipl/data';
 import type { AiOptions, AuctionEvent, TeamController } from '@ipl/engine';
-import { Auction, aiBidDelay, aiWantsToBid, assignPersonalities, grade, poolSetup, teamStrength } from '@ipl/engine';
+import { Auction, aiBidDelay, aiWantsToBid, assignPersonalities, grade, poolSetup, teamStrength, valueForMoney } from '@ipl/engine';
 import type { LogEntry, PublicPlayer, RoomSnapshot, ServerToClient, SetView, SoloSettings, Welcome } from '@ipl/protocol';
 import type { AuctionSettings, BidCheck, Lakh, TeamId } from '@ipl/rules';
 import { MEGA_DEFAULTS, TEAM_IDS } from '@ipl/rules';
@@ -250,8 +250,13 @@ export class Room {
         bowling: strength.bowling,
         grade: grade(strength.overall),
         rank: ranked.findIndex((r) => r.id === id) + 1,
+        balance: strength.balance,
+        pace: strength.pace,
+        spin: strength.spin,
         xi: strength.xi,
         issues: strength.issues,
+        notes: strength.notes,
+        value: valueForMoney(strength.overall, this.settings.purse - t.purse),
       },
     }));
   }
