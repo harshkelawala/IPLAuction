@@ -6,6 +6,7 @@ import { formatLakh, squadTargets, teamById } from '@ipl/rules';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { ROLE_LABEL, ROLE_PLURAL, initials, styleLine } from '@/lib/format';
+import { clearLastRoom } from '@/lib/socket';
 import { useNow, type useRoom } from '@/lib/useRoom';
 import { TeamBadge } from './TeamBadge';
 import styles from './auction.module.css';
@@ -25,6 +26,19 @@ export function AuctionScreen({ room }: { room: Room }) {
   const [viewing, setViewing] = useState<TeamId>(you.id);
   const [allSquads, setAllSquads] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const [ending, setEnding] = useState(false);
+  const [endBusy, setEndBusy] = useState(false);
+
+  async function endAuction(mode: 'finish' | 'quit') {
+    setEndBusy(true);
+    const ok = await room.end(mode);
+    setEndBusy(false);
+    setEnding(false);
+    if (ok && mode === 'quit') {
+      clearLastRoom(snap.roomId);
+      router.push('/');
+    }
+  }
   const router = useRouter();
 
   // Refreshing or closing the tab mid-auction: let the browser ask first.
@@ -98,6 +112,9 @@ export function AuctionScreen({ room }: { room: Room }) {
           <button type="button" className={styles.ghostButton} onClick={snap.paused ? room.resume : room.pause}>
             {snap.paused ? 'Resume' : 'Pause'}
           </button>
+          <button type="button" className={styles.ghostButton} onClick={() => setEnding(true)}>
+            End auction
+          </button>
         </div>
       </header>
 
@@ -162,6 +179,38 @@ export function AuctionScreen({ room }: { room: Room }) {
       </div>
 
       {allSquads && <AllSquads snap={snap} players={room.players} onClose={() => setAllSquads(false)} />}
+
+      {ending && (
+        <div className={styles.modalBackdrop} onClick={() => !endBusy && setEnding(false)}>
+          <div
+            className={styles.modal}
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="end-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="end-title">End the auction?</h2>
+            <div className={styles.endChoices}>
+              <button type="button" className={styles.endChoice} disabled={endBusy} onClick={() => endAuction('finish')}>
+                <strong>Finish now and see results</strong>
+                <span>
+                  The AI teams settle the {snap.upcoming.length + (snap.lot ? 1 : 0)} players still to come, then you get
+                  the final ranking. Your squad stays as it is.
+                </span>
+              </button>
+              <button type="button" className={styles.endChoice} disabled={endBusy} onClick={() => endAuction('quit')}>
+                <strong>Quit without results</strong>
+                <span>The auction is deleted and you go back to the home screen. This can't be undone.</span>
+              </button>
+            </div>
+            <div className={styles.modalActions}>
+              <button type="button" className={styles.ghostButton} onClick={() => setEnding(false)} disabled={endBusy} autoFocus>
+                Keep playing
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {leaving && (
         <div className={styles.modalBackdrop} onClick={() => setLeaving(false)}>

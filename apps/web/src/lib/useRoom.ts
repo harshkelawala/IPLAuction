@@ -122,11 +122,16 @@ export function useRoom(roomId: string) {
     [],
   );
 
+  const end = useCallback(async (mode: 'finish' | 'quit') => {
+    const res = await getSocket().emitWithAck('room:end', { mode });
+    return res.ok;
+  }, []);
+
   const pause = useCallback(() => void getSocket().emitWithAck('room:pause'), []);
   const resume = useCallback(() => void getSocket().emitWithAck('room:resume'), []);
   const clearFlash = useCallback(() => setState((s) => ({ ...s, flash: null })), []);
 
-  return { ...state, bid, skip, setWatch, pause, resume, clearFlash };
+  return { ...state, bid, skip, setWatch, end, pause, resume, clearFlash };
 }
 
 /** Re-render every animation frame while `active`; returns Date.now(). */

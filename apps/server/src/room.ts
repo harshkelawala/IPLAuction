@@ -135,7 +135,32 @@ export class Room {
     if (this.paused) return { ok: false, message: 'Resume the auction first' };
     if (lot.leader === this.human) return { ok: false, message: 'You hold the highest bid. Wait for the hammer or a rival raise.' };
     this.clearTimers();
+    this.handle(this.settleWithoutYou(this.now()));
+    return { ok: true };
+  }
+
+  /**
+   * End the auction now: the AI teams settle every remaining player instantly (you keep
+   * the squad you have; if you hold the highest bid on the current player, he's yours).
+   */
+  finishNow(): void {
+    this.lastActivity = this.now();
+    this.clearTimers();
+    this.paused = false;
+    this.pausedBy = null;
+    this.pausedRemainingMs = null;
     const now = this.now();
+    // Record results quietly, then send one update instead of one per player.
+    for (let i = 0; i < 2_000 && !this.isDone; i++) {
+      for (const e of this.settleWithoutYou(now)) this.record(e);
+    }
+    this.broadcast();
+  }
+
+  /** AI teams bid on the current player with no delays, then the hammer falls. */
+  private settleWithoutYou(now: number): AuctionEvent[] {
+    const lot = this.auction.currentLot;
+    if (!lot) return [];
     for (let i = 0; i < 10_000; i++) {
       const keen = TEAM_IDS.filter((id) => id !== this.human && aiWantsToBid(this.auction, id, this.ai));
       if (keen.length === 0) break;
@@ -144,8 +169,14 @@ export class Room {
       if (amount === null || !this.auction.placeBid(team, amount, now).check.ok) break;
     }
     this.auction.setDeadline(now);
-    this.handle(this.auction.tick(now));
-    return { ok: true };
+    return this.auction.tick(now);
+  }
+
+  /** Add an auction event to the results log without announcing it. */
+  private record(e: AuctionEvent): void {
+    if (e.type === 'sold') this.pushLog({ kind: 'sold', playerId: e.playerId, teamId: e.teamId, price: e.price });
+    if (e.type === 'unsold') this.pushLog({ kind: 'unsold', playerId: e.playerId });
+    if (e.type === 'phase' && e.phase !== 'main') this.pushLog({ kind: 'phase', phase: e.phase });
   }
 
   /** Replace the watchlist and auto-skip setting, then re-plan the current player. */

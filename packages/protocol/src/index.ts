@@ -150,6 +150,11 @@ export interface ClientToServer {
   'watch:set': (req: { playerIds: string[]; autoSkip: boolean }, ack: Ack<null>) => void;
   'room:pause': (ack: Ack<null>) => void;
   'room:resume': (ack: Ack<null>) => void;
+  /**
+   * End the auction. 'finish': AI teams settle every remaining player now and the results
+   * are shown. 'quit': the auction is deleted without results.
+   */
+  'room:end': (req: { mode: 'finish' | 'quit' }, ack: Ack<null>) => void;
 }
 
 export type BidEvent = { roomId: string; playerId: string; teamId: TeamId; amount: Lakh };

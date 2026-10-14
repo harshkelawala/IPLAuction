@@ -213,6 +213,29 @@ describe('game server', () => {
     expect(game.rooms.get(a.roomId)?.isPaused).toBe(true);
   });
 
+  it('ends the auction now: AI settles the rest and results are ready', async () => {
+    const c = client();
+    const firstState = waitFor(c, (s) => s.lot !== null);
+    const a = await createAndJoin(c);
+    await firstState;
+    const done = waitFor(c, (s) => s.phase === 'done', 5_000);
+    expect(await c.emitWithAck('room:end', { mode: 'finish' })).toEqual({ ok: true, data: null });
+    const end = await done;
+    expect(end.lot).toBeNull();
+    for (const t of end.teams) if (t.controller === 'ai') expect(t.squad.length).toBeGreaterThanOrEqual(end.settings.minSquad);
+    expect(game.rooms.get(a.roomId)?.isDone).toBe(true);
+  });
+
+  it('quits the auction without results', async () => {
+    const c = client();
+    const firstState = waitFor(c, (s) => s.lot !== null);
+    const a = await createAndJoin(c);
+    await firstState;
+    await c.emitWithAck('room:end', { mode: 'quit' });
+    expect(game.rooms.has(a.roomId)).toBe(false);
+    expect(await c.emitWithAck('room:peek', { roomId: a.roomId, token: a.token })).toEqual({ ok: true, data: null });
+  });
+
   it('pauses and resumes', async () => {
     const c = client();
     const first = waitFor(c, (s) => s.lot !== null);

@@ -143,6 +143,22 @@ export function createGameServer(http: HttpServer, opts: GameServerOptions = {})
       ack({ ok: true, data: { phase: room.auction.currentPhase, done, total, teamId: room.human } });
     });
 
+    socket.on('room:end', async ({ mode }, ack) => {
+      const room = roomOf();
+      if (!room) return ack({ ok: false, error: 'Join an auction first' });
+      if (mode === 'finish') {
+        room.finishNow();
+        return ack({ ok: true, data: null });
+      }
+      if (mode === 'quit') {
+        await leaveCurrent();
+        room.dispose();
+        rooms.delete(room.id);
+        return ack({ ok: true, data: null });
+      }
+      ack({ ok: false, error: 'Choose finish or quit' });
+    });
+
     socket.on('room:leave', async (ack) => {
       await leaveCurrent();
       ack({ ok: true, data: null });
