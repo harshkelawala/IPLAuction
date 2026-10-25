@@ -4,7 +4,7 @@ import type { PublicPlayer, RoomSnapshot, SetView, TeamView } from '@ipl/protoco
 import type { Role, TeamId } from '@ipl/rules';
 import { formatLakh, squadTargets, teamById } from '@ipl/rules';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ROLE_LABEL, ROLE_PLURAL, initials, styleLine } from '@/lib/format';
 import { clearLastRoom } from '@/lib/socket';
 import { useNow, type useRoom } from '@/lib/useRoom';
@@ -24,7 +24,7 @@ export function AuctionScreen({ room }: { room: Room }) {
   const msLeft = lot ? (snap.paused ? (snap.pausedRemainingMs ?? 0) : Math.max(0, lot.endsAt - (now + room.clockOffset))) : 0;
   const [bidError, setBidError] = useState<string | null>(null);
   const [viewing, setViewing] = useState<TeamId>(you.id);
-  const [allSquads, setAllSquads] = useState(false);
+  const moves = useRankMoves(snap);
   const [leaving, setLeaving] = useState(false);
   const [ending, setEnding] = useState(false);
   const [endBusy, setEndBusy] = useState(false);
@@ -106,7 +106,11 @@ export function AuctionScreen({ room }: { room: Room }) {
         </p>
         <div className={styles.topActions}>
           {!room.connected && <span className={styles.offline}>Reconnecting…</span>}
-          <button type="button" className={styles.ghostButton} onClick={() => setAllSquads(true)}>
+          <button
+            type="button"
+            className={styles.ghostButton}
+            onClick={() => document.getElementById('all-squads')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          >
             All squads
           </button>
           <button type="button" className={styles.ghostButton} onClick={snap.paused ? room.resume : room.pause}>
@@ -121,6 +125,7 @@ export function AuctionScreen({ room }: { room: Room }) {
       <div className={styles.layout}>
         <TeamsRail
           teams={snap.teams}
+          moves={moves}
           leader={lot?.leader ?? null}
           maxSquad={snap.settings.maxSquad}
           viewing={viewing}
@@ -178,7 +183,7 @@ export function AuctionScreen({ room }: { room: Room }) {
         <SquadPanel team={shown} snap={snap} players={room.players} onShowYours={() => setViewing(you.id)} />
       </div>
 
-      {allSquads && <AllSquads snap={snap} players={room.players} onClose={() => setAllSquads(false)} />}
+      <SquadsBoard snap={snap} players={room.players} moves={moves} />
 
       {ending && (
         <div className={styles.modalBackdrop} onClick={() => !endBusy && setEnding(false)}>
@@ -497,58 +502,107 @@ function FlashBanner({
   );
 }
 
+/** Live league table: every team's rank, strength, purse and squad size, strongest first. */
 function TeamsRail({
   teams,
+  moves,
   leader,
   maxSquad,
   viewing,
   onSelect,
 }: {
   teams: TeamView[];
+  moves: Map<TeamId, number>;
   leader: TeamId | null;
   maxSquad: number;
   viewing: TeamId;
   onSelect: (id: TeamId) => void;
 }) {
+  const table = rankedTeams(teams);
   return (
-    <aside className={styles.rail} aria-label="All franchises">
-      <h2 className={styles.railTitle}>Franchises</h2>
-      <p className={styles.railHint}>Select a team to see its squad.</p>
+    <aside className={styles.rail} aria-label="Live standings">
+      <h2 className={styles.railTitle}>Live standings</h2>
+      <p className={styles.railHint}>Strongest squad first. Select a team to see its squad.</p>
       <ol className={styles.teamList}>
-        {teams.map((t) => (
-          <li key={t.id}>
-            <button
-              type="button"
-              className={styles.teamRow}
-              data-leading={t.id === leader}
-              data-you={t.isYou}
-              aria-pressed={t.id === viewing}
-              onClick={() => onSelect(t.id)}
-            >
-            <TeamBadge id={t.id} size={26} />
-            <span className={styles.teamName}>
-              {t.id}
-              {t.isYou && <span className={styles.youTag}>You</span>}
-            </span>
-            <span className={`${styles.teamPurse} num`}>{formatLakh(t.purse)}</span>
-            <span className={styles.teamCounts}>
-              {t.squad.length}/{maxSquad} players, {t.overseasCount} overseas
-              {t.squad.length > 0 && (
-                <>
-                  {' · '}
-                  <span className={styles.rankTag}>
-                    #{t.strength.rank}
-                    {t.strength.xi.length === 11 ? ` ${t.strength.grade}` : ''}
-                  </span>
-                </>
-              )}
-            </span>
-            </button>
-          </li>
-        ))}
+        {table.map((t) => {
+          const started = t.squad.length > 0;
+          const move = moves.get(t.id) ?? 0;
+          return (
+            <li key={t.id}>
+              <button
+                type="button"
+                className={styles.teamRow}
+                data-leading={t.id === leader}
+                data-you={t.isYou}
+                aria-pressed={t.id === viewing}
+                onClick={() => onSelect(t.id)}
+              >
+                <span className={`${styles.rankNum} num`}>{started ? t.strength.rank : '–'}</span>
+                <TeamBadge id={t.id} size={26} />
+                <span className={styles.teamName}>
+                  {t.id}
+                  {t.isYou && <span className={styles.youTag}>You</span>}
+                  {move !== 0 && (
+                    <span className={styles.rankMove} data-dir={move > 0 ? 'up' : 'down'} aria-label={`${move > 0 ? 'up' : 'down'} ${Math.abs(move)}`}>
+                      {move > 0 ? '▲' : '▼'}
+                      {Math.abs(move)}
+                    </span>
+                  )}
+                </span>
+                <span className={styles.teamScore}>
+                  {started ? (
+                    <>
+                      <span className="num">{t.strength.overall.toFixed(1)}</span>
+                      {t.strength.xi.length === 11 && <span className={styles.gradeChip}>{t.strength.grade}</span>}
+                    </>
+                  ) : (
+                    <span className={styles.noScore}>no players</span>
+                  )}
+                </span>
+                <span className={styles.teamCounts}>
+                  {t.squad.length}/{maxSquad} players, {t.overseasCount} OS
+                </span>
+                <span className={`${styles.teamPurse} num`}>{formatLakh(t.purse)}</span>
+              </button>
+            </li>
+          );
+        })}
       </ol>
     </aside>
   );
+}
+
+/** Teams by live rank; teams with nobody signed go last. */
+function rankedTeams(teams: TeamView[]): TeamView[] {
+  return [...teams].sort((a, b) => {
+    const ea = a.squad.length === 0 ? 1 : 0;
+    const eb = b.squad.length === 0 ? 1 : 0;
+    return ea - eb || a.strength.rank - b.strength.rank;
+  });
+}
+
+/**
+ * How many places each team moved with the latest sale (positive = up).
+ * Kept until the next sale, so the arrows stay visible while the next player is auctioned.
+ */
+function useRankMoves(snap: RoomSnapshot): Map<TeamId, number> {
+  const ranks = new Map(snap.teams.map((t) => [t.id, t.squad.length ? t.strength.rank : 99]));
+  const key = [...ranks.values()].join(',');
+  const prev = useRef<Map<TeamId, number> | null>(null);
+  const [moves, setMoves] = useState<Map<TeamId, number>>(new Map());
+  useEffect(() => {
+    const before = prev.current;
+    prev.current = ranks;
+    if (!before) return;
+    const next = new Map<TeamId, number>();
+    for (const [id, r] of ranks) {
+      const was = before.get(id);
+      if (was !== undefined && was !== 99 && r !== 99 && was !== r) next.set(id, was - r);
+    }
+    if (next.size) setMoves(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+  return moves;
 }
 
 function SquadPanel({
@@ -930,29 +984,24 @@ function StrengthBlock({ team, players }: { team: TeamView; players: Map<string,
   );
 }
 
-function AllSquads({
+/** Every team's squad on the dashboard itself, live, strongest first. */
+function SquadsBoard({
   snap,
   players,
-  onClose,
+  moves,
 }: {
   snap: RoomSnapshot;
   players: Map<string, PublicPlayer>;
-  onClose: () => void;
+  moves: Map<TeamId, number>;
 }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
-  const teams = [...snap.teams].sort((a, b) => a.strength.rank - b.strength.rank);
+  const teams = rankedTeams(snap.teams);
+  const lastSale = snap.log.find((e) => e.kind === 'sold');
+  const newest = lastSale?.kind === 'sold' ? lastSale.playerId : null;
   return (
-    <div className={styles.allOverlay} role="dialog" aria-modal="true" aria-labelledby="all-squads-title">
-      <div className={styles.allHead}>
-        <h2 id="all-squads-title">All squads</h2>
-        <p>Live, strongest first. The auction keeps running while this is open.</p>
-        <button type="button" className={styles.ghostButton} onClick={onClose} autoFocus>
-          Close
-        </button>
+    <section className={styles.board} id="all-squads" aria-labelledby="all-squads-title">
+      <div className={styles.boardHead}>
+        <h2 id="all-squads-title">Every squad, live</h2>
+        <p>Strongest first. Updates after every sale; the latest signing is highlighted.</p>
       </div>
       <div className={styles.allGrid}>
         {teams.map((t) => {
@@ -961,6 +1010,8 @@ function AllSquads({
             const p = players.get(s.playerId);
             if (p) byRole.get(p.role)?.push({ p, price: s.price });
           }
+          const spent = t.squad.reduce((a, s) => a + s.price, 0);
+          const move = moves.get(t.id) ?? 0;
           return (
             <section key={t.id} className={styles.allCard} data-you={t.isYou}>
               <header>
@@ -971,17 +1022,30 @@ function AllSquads({
                     {t.isYou && <span className={styles.youTag}>You</span>}
                   </h3>
                   <p>
-                    {t.squad.length} of {snap.settings.maxSquad}, {t.overseasCount} OS,{' '}
-                    <span className="num">{formatLakh(t.purse)}</span> left
+                    {t.squad.length} of {snap.settings.maxSquad}, {t.overseasCount} OS · spent{' '}
+                    <span className="num">{formatLakh(spent)}</span>, <span className="num">{formatLakh(t.purse)}</span> left
                   </p>
                 </div>
                 {t.squad.length > 0 && (
                   <span className={styles.allRank}>
                     #{t.strength.rank}
+                    {move !== 0 && (
+                      <span className={styles.rankMove} data-dir={move > 0 ? 'up' : 'down'}>
+                        {move > 0 ? '▲' : '▼'}
+                        {Math.abs(move)}
+                      </span>
+                    )}
                     {t.strength.xi.length === 11 && <span className={styles.gradeChip}>{t.strength.grade}</span>}
                   </span>
                 )}
               </header>
+              {t.squad.length > 0 && (
+                <p className={styles.boardStrength}>
+                  Strength <span className="num">{t.strength.overall.toFixed(1)}</span> · bat{' '}
+                  <span className="num">{t.strength.batting.toFixed(0)}</span> · bowl{' '}
+                  <span className="num">{t.strength.bowling.toFixed(0)}</span>
+                </p>
+              )}
               {t.squad.length === 0 ? (
                 <p className={styles.empty}>No players yet.</p>
               ) : (
@@ -993,7 +1057,7 @@ function AllSquads({
                       <h4>{ROLE_PLURAL[r]}</h4>
                       <ul>
                         {list.map(({ p, price }) => (
-                          <li key={p.id}>
+                          <li key={p.id} data-new={p.id === newest}>
                             <span>
                               {p.name}
                               {p.isOverseas && <span className={styles.ovMark}> (OS)</span>}
@@ -1010,6 +1074,6 @@ function AllSquads({
           );
         })}
       </div>
-    </div>
+    </section>
   );
 }

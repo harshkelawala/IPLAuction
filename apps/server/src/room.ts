@@ -270,13 +270,18 @@ export class Room {
     const a = this.auction;
     const rows = TEAM_IDS.map((id) => {
       const t = a.team(id);
+      // During the auction, rank squads on what they have so far; at the end, on the real thing.
       const strength = teamStrength(
         t.squad.map((s) => a.player(s.playerId)),
         this.settings,
+        { live: a.currentPhase !== 'done' },
       );
       return { id, t, strength };
     });
-    const ranked = [...rows].sort((x, y) => y.strength.overall - x.strength.overall);
+    // Teams with nobody signed share the bottom of the table.
+    const ranked = [...rows].sort(
+      (x, y) => Number(y.t.squad.length > 0) - Number(x.t.squad.length > 0) || y.strength.overall - x.strength.overall,
+    );
     return rows.map(({ id, t, strength }) => ({
       id,
       controller: t.controller.kind,

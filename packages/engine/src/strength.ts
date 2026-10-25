@@ -21,6 +21,10 @@ import { MAX_OVERSEAS_IN_XI, XI_SIZE } from '@ipl/rules';
  *   overall  = 0.475 batting + 0.475 bowling + 0.05 bench + balance − penalties
  * Penalties: no wicketkeeper −6, fewer than 5 bowling options −4 each,
  * squad below the minimum −3 per missing player. An XI place nobody fills counts as 30.
+ *
+ * Live mode (during the auction) answers "how strong is this squad so far?": an XI place not
+ * yet filled counts as a replacement-level player (60) and the penalties for gaps still being
+ * filled (no keeper yet, too few bowlers or players, attack mix) wait until the XI is complete.
  */
 
 export interface TeamStrength {
@@ -98,12 +102,19 @@ export function bestXI(squad: Player[]): Player[] {
   return xi;
 }
 
-export function teamStrength(squad: Player[], settings: Pick<AuctionSettings, 'minSquad'>): TeamStrength {
+export function teamStrength(
+  squad: Player[],
+  settings: Pick<AuctionSettings, 'minSquad'>,
+  opts: { live?: boolean } = {},
+): TeamStrength {
   const xi = bestXI(squad);
   const battingOptions = xi.filter(isBattingOption);
   const bowlingOptions = xi.filter(isBowlingOption);
-  const batting = weightedTop(battingOptions.map(bat), BAT_WEIGHTS, EMPTY_XI_PLACE);
-  const bowling = weightedTop(bowlingOptions.map(bowl), BOWL_WEIGHTS, EMPTY_XI_PLACE);
+  // Live: judge only what's been decided; places still open count as replacement level.
+  const pending = !!opts.live && xi.length < XI_SIZE;
+  const open = pending ? REPLACEMENT : EMPTY_XI_PLACE;
+  const batting = weightedTop(battingOptions.map(bat), BAT_WEIGHTS, open);
+  const bowling = weightedTop(bowlingOptions.map(bowl), BOWL_WEIGHTS, open);
   const bench = weightedTop(
     squad.filter((p) => !xi.includes(p)).map((p) => p.rating),
     new Array<number>(BENCH_SIZE).fill(1),
@@ -118,11 +129,11 @@ export function teamStrength(squad: Player[], settings: Pick<AuctionSettings, 'm
 
   if (hasPlayers && !xi.some((p) => p.role === 'WK')) {
     issues.push('No wicketkeeper');
-    penalty += 6;
+    if (!pending) penalty += 6;
   }
   if (hasPlayers && bowlingOptions.length < 5) {
     issues.push(`Only ${bowlingOptions.length} bowling option${bowlingOptions.length === 1 ? '' : 's'}`);
-    penalty += 4 * (5 - bowlingOptions.length);
+    if (!pending) penalty += 4 * (5 - bowlingOptions.length);
   }
 
   // Attack mix: T20 sides want at least two quicks and a spinner.
@@ -130,11 +141,11 @@ export function teamStrength(squad: Player[], settings: Pick<AuctionSettings, 'm
   const spin = xi.filter(isSpin).length;
   if (hasPlayers && pace < 2) {
     issues.push(pace === 0 ? 'No pace bowler in the XI' : 'Only 1 pace bowler in the XI');
-    balance -= 3 * (2 - pace);
+    if (!pending) balance -= 3 * (2 - pace);
   }
   if (hasPlayers && spin === 0) {
     issues.push('No spinner in the XI');
-    balance -= 4;
+    if (!pending) balance -= 4;
   }
   if (pace >= 3 && spin >= 2) {
     notes.push(`Balanced attack: ${pace} pace, ${spin} spin`);
@@ -150,7 +161,7 @@ export function teamStrength(squad: Player[], settings: Pick<AuctionSettings, 'm
 
   if (xi.length < XI_SIZE && hasPlayers) issues.push(`Can't field an XI yet (${xi.length} of 11)`);
   const short = settings.minSquad - squad.length;
-  if (short > 0) penalty += 3 * short;
+  if (short > 0 && !opts.live) penalty += 3 * short;
 
   const overall = Math.max(0, 0.475 * batting + 0.475 * bowling + 0.05 * bench + balance - penalty);
   const order = (p: Player) => (p.role === 'BAT' ? 0 : p.role === 'WK' ? 1 : p.role === 'AR' ? 2 : 3);

@@ -89,3 +89,16 @@ describe('team strength', () => {
     expect([grade(92), grade(91), grade(89), grade(87), grade(86), grade(80)]).toEqual(['A+', 'A', 'B+', 'B', 'C', 'D']);
   });
 });
+
+describe('live strength', () => {
+  it('ranks a half-built squad on what it has, without penalties for places still open', () => {
+    const stars = [p('BAT', 95), p('BOWL', 95)];
+    const fair = [p('BAT', 70), p('BOWL', 70)];
+    const a = teamStrength(stars, { minSquad: 18 }, { live: true });
+    const b = teamStrength(fair, { minSquad: 18 }, { live: true });
+    expect(a.overall).toBeGreaterThan(b.overall);
+    expect(b.overall).toBeGreaterThan(50);
+    // The final judgement still punishes an unfinished squad.
+    expect(teamStrength(stars, { minSquad: 18 }).overall).toBeLessThan(a.overall);
+  });
+});
